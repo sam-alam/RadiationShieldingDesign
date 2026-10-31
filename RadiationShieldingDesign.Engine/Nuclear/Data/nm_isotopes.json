@@ -1,0 +1,91 @@
+{
+  "_comment": [
+    "Nuclear medicine shielding data. Every number is copied as printed from the cited source; do not edit without updating 'source'.",
+    "doseRateConst: point source in air, NO patient self-attenuation (conservative).",
+    "Archer model: TF(x) = [ (1 + beta/alpha) * exp(alpha*gamma*x) - beta/alpha ]^(-1/gamma). alpha and beta are in 1/<unit>, x in <unit>.",
+    "Half-lives: NNDC/ENSDF evaluated values, rounded to 3-4 significant figures.",
+    "Material names match the app's material list (Lead, Concrete, Lite Concrete, Gypsum Wallboard, Steel, Glass)."
+  ],
+  "sources": {
+    "Kusano2014": "Kusano M, Caldwell CB. Dose equivalent rate constants and barrier transmission data for nuclear medicine facility dose calculations and shielding design. Health Phys 107(1):60-72 (2014). Tables 3, 7, 8.",
+    "Oumano2025": "Oumano M, et al. Shielding resources for four common radiopharmaceuticals utilized for imaging and therapy: Tc-99m, F-18, I-131, and Lu-177. J Appl Clin Med Phys (2025), doi:10.1002/acm2.70084. Tables 2, 3."
+  },
+  "nuclides": [
+    {
+      "id": "Tc-99m",
+      "halfLife_h": 6.01,
+      "doseRateConst_uSv_m2_per_GBq_h": 16.10,
+      "doseRateConstSource": "Kusano2014",
+      "materials": {
+        "Lead":             { "model": "Archer", "unit": "mm", "alpha": 2.479,    "beta": -1.093,    "gamma": 1.376,  "tvl": 1.08,  "source": "Kusano2014" },
+        "Concrete":         { "model": "Archer", "unit": "cm", "alpha": 0.2813,   "beta": -0.2349,   "gamma": 0.9653, "tvl": 14.32, "source": "Kusano2014" },
+        "Lite Concrete":    { "model": "Archer", "unit": "mm", "alpha": 0.02047,  "beta": -0.01122,  "gamma": 0.4389, "tvl": 176,   "source": "Oumano2025" },
+        "Gypsum Wallboard": { "model": "Archer", "unit": "mm", "alpha": 0.009549, "beta": -0.005312, "gamma": 1.430,  "tvl": 299,   "source": "Oumano2025" },
+        "Steel":            { "model": "Archer", "unit": "mm", "alpha": 0.1581,   "beta": -0.04346,  "gamma": 0.2602, "tvl": 18.4,  "source": "Oumano2025" },
+        "Glass":            { "model": "Archer", "unit": "mm", "alpha": 0.03419,  "beta": -0.02009,  "gamma": 0.3076, "tvl": 119,   "source": "Oumano2025" }
+      }
+    },
+    {
+      "id": "Tl-201",
+      "halfLife_h": 73.0,
+      "doseRateConst_uSv_m2_per_GBq_h": 11.29,
+      "doseRateConstSource": "Kusano2014",
+      "materials": {
+        "Lead":     { "model": "Archer", "unit": "mm", "alpha": 1.670, "beta": 1.358, "gamma": 0.3692, "tvl": 0.89, "source": "Kusano2014" },
+        "Concrete": { "model": "TVL", "unit": "cm", "tvl": 10.50, "source": "Kusano2014",
+                      "note": "Published Archer fit (alpha=0.2607, beta=-0.2607, gamma=20.99) is degenerate as printed (1+beta/alpha = 0 gives TF = 1 at all thicknesses). Single-TVL model from Table 3 used instead." }
+      }
+    },
+    {
+      "id": "I-123",
+      "halfLife_h": 13.2,
+      "doseRateConst_uSv_m2_per_GBq_h": 41.57,
+      "doseRateConstSource": "Kusano2014",
+      "materials": {
+        "Lead":     { "model": "Archer", "unit": "mm", "alpha": 0.1322, "beta": 14.85, "gamma": 1.488, "tvl": 1.23,  "source": "Kusano2014" },
+        "Concrete": { "model": "Archer", "unit": "cm", "alpha": 0.1866, "beta": 1253,  "gamma": 74.93, "tvl": 12.58, "source": "Kusano2014",
+                      "lowConfidence": true, "note": "Poor fit in source (reduced chi-squared 12.58)." }
+      }
+    },
+    {
+      "id": "In-111",
+      "halfLife_h": 67.3,
+      "doseRateConst_uSv_m2_per_GBq_h": 83.14,
+      "doseRateConstSource": "Kusano2014",
+      "materials": {
+        "Lead":     { "model": "Archer", "unit": "mm", "alpha": 0.7094, "beta": 30.63,   "gamma": 5.979,  "tvl": 2.33,  "source": "Kusano2014" },
+        "Concrete": { "model": "Archer", "unit": "cm", "alpha": 0.2339, "beta": -0.1265, "gamma": 0.4618, "tvl": 15.17, "source": "Kusano2014" }
+      }
+    },
+    {
+      "id": "Ga-67",
+      "halfLife_h": 78.3,
+      "doseRateConst_uSv_m2_per_GBq_h": 20.85,
+      "doseRateConstSource": "Kusano2014",
+      "materials": {
+        "Lead":     { "model": "Archer", "unit": "mm", "alpha": 0.04412, "beta": 0.7326,  "gamma": 0.3869, "tvl": 4.89,  "source": "Kusano2014" },
+        "Concrete": { "model": "Archer", "unit": "cm", "alpha": 0.1865,  "beta": -0.1529, "gamma": 1.683,  "tvl": 17.74, "source": "Kusano2014" }
+      }
+    },
+    {
+      "id": "I-131",
+      "halfLife_h": 192.6,
+      "doseRateConst_uSv_m2_per_GBq_h": 57.44,
+      "doseRateConstSource": "Kusano2014",
+      "materials": {
+        "Lead":     { "model": "Archer", "unit": "mm", "alpha": 0.1078, "beta": 0.2003,  "gamma": 0.4957, "tvl": 10.28, "source": "Kusano2014" },
+        "Concrete": { "model": "Archer", "unit": "cm", "alpha": 0.1705, "beta": -0.1308, "gamma": 1.038,  "tvl": 21.23, "source": "Kusano2014" }
+      }
+    },
+    {
+      "id": "Xe-133",
+      "halfLife_h": 125.8,
+      "doseRateConst_uSv_m2_per_GBq_h": 13.87,
+      "doseRateConstSource": "Kusano2014",
+      "materials": {
+        "Lead":     { "model": "Archer", "unit": "mm", "alpha": 2.660,  "beta": 55.84, "gamma": 2.419, "tvl": 0.40, "source": "Kusano2014" },
+        "Concrete": { "model": "Archer", "unit": "cm", "alpha": 0.3697, "beta": 2.837, "gamma": 7.149, "tvl": 5.58, "source": "Kusano2014" }
+      }
+    }
+  ]
+}
