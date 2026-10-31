@@ -10,6 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="RadiationShieldingDesign.Engine\**" />
+    <EmbeddedResource Remove="RadiationShieldingDesign.Engine\**" />
+    <None Remove="RadiationShieldingDesign.Engine\**" />
+    <Page Remove="RadiationShieldingDesign.Engine\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Data\favicon128.ico" />
     <None Remove="Data\favicon256.ico" />
     <None Remove="Data\favicon32.ico" />
@@ -32,7 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RadiationShieldingDesign.Engine\RadiationShieldingDesign.Engine.csproj" />
+    <ProjectReference Include="RadiationShieldingDesign.Engine\RadiationShieldingDesign.Engine.csproj" />
   </ItemGroup>
 
   <ItemGroup>
