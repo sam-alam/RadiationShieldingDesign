@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
@@ -22,10 +23,17 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RadiationShieldingDesign.Engine\RadiationShieldingDesign.Engine.csproj" />
+    <ProjectReference Include="..\RadiationShieldingDesign.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="..\Data\ncrp147_data_bundle.json" Link="Data\ncrp147_data_bundle.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\golden\*.rsd.json" Link="golden\%(Filename)%(Extension)">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

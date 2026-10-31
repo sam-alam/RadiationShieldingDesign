@@ -1,3 +1,4 @@
+using System.IO;
 namespace RadiationShieldingDesign.Engine.Tests;
 
 public class ShieldingCalculatorTests
