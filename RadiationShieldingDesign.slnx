@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../RadiationShieldingDesign.Engine/RadiationShieldingDesign.Engine.csproj" />
+  <Project Path="RadiationShieldingDesign.csproj" />
+</Solution>

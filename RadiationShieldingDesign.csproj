@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>Data/favicon64.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Data\favicon128.ico" />
+    <None Remove="Data\favicon256.ico" />
+    <None Remove="Data\favicon32.ico" />
+    <None Remove="Data\favicon64.ico" />
+    <None Remove="Data\ncrp147_data_bundle.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Data\ncrp147_data_bundle.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="DocumentFormat.OpenXml" Version="3.4.1" />
+    <PackageReference Include="MaterialDesignThemes" Version="5.3.1" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.5" />
+    <PackageReference Include="WPF-UI" Version="4.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RadiationShieldingDesign.Engine\RadiationShieldingDesign.Engine.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Data\favicon128.ico" />
+    <Resource Include="Data\favicon256.ico" />
+    <Resource Include="Data\favicon32.ico" />
+    <Resource Include="Data\favicon64.ico" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,53 @@
+﻿<Window x:Class="RadiationShieldingDesign.TipsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RadiationShieldingDesign"
+        mc:Ignorable="d"
+        Title="Help" 
+    Width="550"
+        Height="480"
+    WindowStartupLocation="CenterOwner"
+    ResizeMode="NoResize"
+    Icon="pack://application:,,,/Data/favicon256.ico">
+    <ScrollViewer>
+        <StackPanel Margin="20">
+            <TextBlock Text="Tips and Shortcuts"
+                   FontSize="22" FontWeight="Bold" Margin="0,0,0,12"/>
+
+            <TextBlock FontWeight="SemiBold" Height="21">Canvas interaction</TextBlock>
+            <TextBlock Text="• Drag tube to move source."/>
+            <TextBlock Text="• Drag barrier endpoints to resize; drag line to move"/>
+            <TextBlock Text="• Press A to align selected barrier horizontally or vertically"/>
+            <TextBlock Text="• Arrow keys fine-move barriers (Shift = coarser, Ctrl = finer)"/>
+
+            <Separator Margin="0,10"/>
+
+            <TextBlock FontWeight="SemiBold" Height="26">Distances when multiple sources</TextBlock>
+            <TextBlock TextWrapping="Wrap">
+            • Save distance: locks the current measured canvas distance for that barrier.</TextBlock>
+                <TextBlock TextWrapping="Wrap">
+                You can then move the source elsewhere and keep that barrier’s distance unchanged.
+            </TextBlock>
+            <TextBlock TextWrapping="Wrap">
+            • Override distance: explicitly sets the distance used for calculation (locks it).</TextBlock>
+                <TextBlock TextWrapping="Wrap">
+                Press Enter in the override box to apply/snap (if Snap is enabled). 
+                You can then move the source elsewhere and keep that barrier’s distance unchanged.
+            </TextBlock>
+
+            <Separator Margin="0,10"/>
+
+            <TextBlock FontWeight="SemiBold" Height="24">Apply Gap</TextBlock>
+            <TextBlock TextWrapping="Wrap">
+            • Enter desired distance. Select wall A, then wall B; Click Apply Gap. Moves the current wall to achieve the gap. Only works for parallel walls.
+            </TextBlock>
+
+            <StackPanel HorizontalAlignment="Right" Margin="0,12,0,0">
+                <Button Content="Close" Width="90" Click="Close_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+
+</Window>
