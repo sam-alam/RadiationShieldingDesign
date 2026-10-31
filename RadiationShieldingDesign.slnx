@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="RadiationShieldingDesign.csproj" />
+  <Project Path="RadiationShieldingDesign.Engine.Tests/RadiationShieldingDesign.Engine.Tests.csproj" />
   <Project Path="RadiationShieldingDesign.Engine/RadiationShieldingDesign.Engine.csproj" />
 </Solution>

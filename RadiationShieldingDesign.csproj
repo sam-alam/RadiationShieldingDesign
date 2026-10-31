@@ -10,9 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="RadiationShieldingDesign.Engine.Tests\**" />
     <Compile Remove="RadiationShieldingDesign.Engine\**" />
+    <EmbeddedResource Remove="RadiationShieldingDesign.Engine.Tests\**" />
     <EmbeddedResource Remove="RadiationShieldingDesign.Engine\**" />
+    <None Remove="RadiationShieldingDesign.Engine.Tests\**" />
     <None Remove="RadiationShieldingDesign.Engine\**" />
+    <Page Remove="RadiationShieldingDesign.Engine.Tests\**" />
     <Page Remove="RadiationShieldingDesign.Engine\**" />
   </ItemGroup>
 
