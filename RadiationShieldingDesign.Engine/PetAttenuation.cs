@@ -12,7 +12,7 @@
     {
         // Tenth-Value Layer (TVL) at 511 keV
         // Lead: 1.37 cm, Concrete: 11.3 cm, Tungsten: 0.89 cm, Lead glass: 2.65 cm
-        // Source: PET facility radiation safety slide deck table (511 keV TVLs). :contentReference[oaicite:0]{index=0}
+        // Source: AAPM Task Group 108 (Madsen et al., Med Phys 33(1):4-15, 2006), 511 keV shielding data.
         public static double Tvl_cm(PetShieldMaterial mat) => mat switch
         {
             PetShieldMaterial.Iron => 3.8,
