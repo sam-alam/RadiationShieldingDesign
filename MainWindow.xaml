@@ -38,6 +38,10 @@
             <Setter Property="BorderBrush" Value="#60FFFFFF"/>
             <Setter Property="Background" Value="#3F464F"/>
             <Setter Property="Foreground" Value="White"/>
+            <!-- Make selected text clearly visible on the dark background -->
+            <Setter Property="SelectionBrush" Value="#4FA3FF"/>
+            <Setter Property="SelectionOpacity" Value="0.55"/>
+            <Setter Property="CaretBrush" Value="White"/>
             <Style.Triggers>
                 <Trigger Property="IsFocused" Value="True">
                     <Setter Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}"/>
