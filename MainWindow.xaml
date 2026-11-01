@@ -42,6 +42,41 @@
             <Setter Property="SelectionBrush" Value="#4FA3FF"/>
             <Setter Property="SelectionOpacity" Value="0.55"/>
             <Setter Property="CaretBrush" Value="White"/>
+            <!-- The WPF-UI base template never draws Material Design hints, so filled boxes had no label.
+                 This template shows the hint as a small caption that stays visible above the value. -->
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4" SnapsToDevicePixels="True">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock x:Name="Caption" Grid.Row="0"
+                                           Margin="8,4,8,0" FontSize="11" Opacity="0.65"
+                                           Foreground="{TemplateBinding Foreground}"
+                                           TextTrimming="CharacterEllipsis" IsHitTestVisible="False"
+                                           Text="{Binding Path=(materialDesign:HintAssist.Hint), RelativeSource={RelativeSource TemplatedParent}}"/>
+                                <ScrollViewer x:Name="PART_ContentHost" Grid.Row="1"
+                                              Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center"
+                                              HorizontalScrollBarVisibility="Hidden"
+                                              VerticalScrollBarVisibility="Hidden"
+                                              Focusable="False"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="materialDesign:HintAssist.Hint" Value="{x:Null}">
+                                <Setter TargetName="Caption" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
             <Style.Triggers>
                 <Trigger Property="IsFocused" Value="True">
                     <Setter Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}"/>
@@ -746,12 +781,12 @@
             <MenuItem Header="_File">
                 <MenuItem Header="Switch Room" Click="MenuSwitchRoom_Click" />
                 <Separator/>
-                <MenuItem Header="_Load design" Click="MenuOpen_Click"/>
+                <MenuItem Header="_Load design" Click="MenuOpen_Click" InputGestureText="Ctrl+O"/>
                 <Separator/>
-                <MenuItem Header="_Save design" Click="MenuSave_Click"/>
-                <MenuItem Header="Save _As..." Click="MenuSaveAs_Click"/>
+                <MenuItem Header="_Save design" Click="MenuSave_Click" InputGestureText="Ctrl+S"/>
+                <MenuItem Header="Save _As..." Click="MenuSaveAs_Click" InputGestureText="Ctrl+Shift+S"/>
                 <Separator/>
-                <MenuItem Header="_Export Report..." Click="MenuExport_Click"/>
+                <MenuItem Header="_Export Report..." Click="MenuExport_Click" InputGestureText="Ctrl+E"/>
             </MenuItem>
 
             <MenuItem Header="_Help">
@@ -953,7 +988,7 @@
                                           IsChecked="{Binding PetPatientDoseConstManual}"
                                           Margin="0,0,16,0" VerticalAlignment="Center"/>
                                             <TextBox Style="{StaticResource RsdTextBox}"
-                                         materialDesign:HintAssist.Hint="Value"
+                                         materialDesign:HintAssist.Hint="µSv·m²/(MBq·h)"
                                          
                                          Text="{Binding PetPatientDoseConst_Text, UpdateSourceTrigger=PropertyChanged}"
                                          IsEnabled="{Binding PetPatientDoseConstManual}"
@@ -1297,8 +1332,9 @@
                                         </StackPanel>
                                     </materialDesign:Card>
 
-                                    <!-- CARD: Air-Kerma K -->
-                                    <materialDesign:Card Margin="0,0,0,10" UniformCornerRadius="10">
+                                    <!-- CARD: Air-Kerma K (hidden for SPECT: dose is per nuclide, no single K1) -->
+                                    <materialDesign:Card Margin="0,0,0,10" UniformCornerRadius="10"
+                                         Visibility="{Binding DataContext.IsSPECT, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
                                         <StackPanel Margin="14,12">
                                             <TextBlock Text="UNSHIELDED AIR-KERMA K (mGy/pt)"
                                            Style="{StaticResource RsdSectionOverlineTextBlock}"
@@ -1316,7 +1352,7 @@
                                             </StackPanel>
 
                                             <TextBox Style="{StaticResource RsdTextBox}"
-                                         materialDesign:HintAssist.Hint="K value"
+                                         materialDesign:HintAssist.Hint="K (mGy/pt @ 1 m)"
                                          
                                          Text="{Binding K1Text, UpdateSourceTrigger=PropertyChanged}"
                                          IsEnabled="{Binding IsK1InputEnabled}"
@@ -1355,6 +1391,8 @@
                                     <!-- CARD: Pre-shield + Pre-existing -->
                                     <materialDesign:Card Margin="0,0,0,10" UniformCornerRadius="10">
                                         <StackPanel Margin="14,12">
+                                            <!-- Primary pre-shield applies to x-ray primary barriers only -->
+                                            <StackPanel Visibility="{Binding DataContext.IsNuclear, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
                                             <TextBlock Text="PRE-SHIELD"
                                            Style="{StaticResource RsdSectionOverlineTextBlock}"
                                            Opacity="0.6" Margin="0,0,0,10"/>
@@ -1385,6 +1423,8 @@
                                              IsReadOnly="True"
                                              IsEnabled="{Binding ApplyPreShield}"/>
                                             </Grid>
+
+                                            </StackPanel>
 
                                             <TextBlock Text="PRE-EXISTING SHIELDING"
                                            Style="{StaticResource RsdSectionOverlineTextBlock}"
@@ -1465,11 +1505,13 @@
                                     Padding="4,8"/>
                                         <Button Grid.Column="2"
                                     Content="Compute All"
+                                    ToolTip="Compute all barriers (Ctrl+Enter)"
                                     Command="{Binding DataContext.ComputeAllCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                     Style="{StaticResource RsdPrimaryButton}"
                                     Padding="4,8"/>
                                     </Grid>
                                     <Button Content="Export Report…"
+                                ToolTip="Export report (Ctrl+E)"
                                 Click="SaveReport_Click"
                                 Style="{StaticResource RsdButton}"
                                 HorizontalAlignment="Stretch"
@@ -1774,6 +1816,7 @@
                                 Margin="0,0,6,6" Padding="8,4"/>
                                     <Button Content="Remove"
                                 Command="{Binding RemoveSelectedCommand}"
+                                ToolTip="Remove selected barrier (Delete). Duplicate: Ctrl+D"
                                 Style="{StaticResource RsdButton}"
                                 Foreground="#EF9A9A"
                                 Margin="0,0,0,6" Padding="8,4"/>
@@ -1781,6 +1824,20 @@
 
                                 <!-- Barrier list -->
                                 <StackPanel x:Name="BarrierListPanel">
+                                    <Border Background="#0C1f6feb" BorderBrush="#221f6feb" BorderThickness="1"
+                                            CornerRadius="6" Padding="10,6" Margin="0,0,0,8">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding BarrierSummaryText}" Value="">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding BarrierSummaryText}" TextWrapping="Wrap"
+                                                   Foreground="#64B5F6" FontSize="12"/>
+                                    </Border>
                                     <ListBox x:Name="BarrierList"
                                  ItemsSource="{Binding Barriers}"
                                  SelectedItem="{Binding SelectedBarrier}"
@@ -1815,6 +1872,22 @@
                                                         <TextBlock Text="{Binding ThicknessShortDisplay, Mode=OneWay}"
                                                        Margin="0,2,0,0" FontStyle="Italic" FontSize="12"
                                                        Foreground="{StaticResource ThicknessTextBrush}"/>
+                                                        <TextBlock Text="{Binding GoverningLimit, StringFormat={}{0} limit governs}"
+                                                       Margin="0,1,0,0" FontSize="11">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground" Value="#9FB3C8"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding GoverningLimit}" Value="">
+                                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding GoverningLimit}" Value="Hourly">
+                                                                            <Setter Property="Foreground" Value="#FFB74D"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
                                                     </StackPanel>
 
                                                     <!-- Primary: has secondary -->
@@ -1858,8 +1931,9 @@
 
                                 <Rectangle Height="1" Fill="{DynamicResource MaterialDesignDivider}" Margin="0,0,0,10"/>
 
-                                <!-- CARD: Workloads -->
-                                <materialDesign:Card Margin="0,0,0,10" UniformCornerRadius="10">
+                                <!-- CARD: Workloads (x-ray/CT only; PET and SPECT have their own parameter cards) -->
+                                <materialDesign:Card Margin="0,0,0,10" UniformCornerRadius="10"
+                                         Visibility="{Binding IsNuclear, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
                                     <StackPanel Margin="14,12">
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                                             <materialDesign:PackIcon Kind="ChartBar" Width="20" Height="20"
@@ -2093,14 +2167,14 @@ Opacity="0.6"/>
                      Style="{StaticResource RsdTextBox}"
                      Text="{Binding RoomHeight_ft, UpdateSourceTrigger=LostFocus}"
                      local:EnterUpdatesTextBox.UpdateOnEnter="True"
-                     materialDesign:HintAssist.Hint="Enter room height"
+                     materialDesign:HintAssist.Hint="Room height (ft)"
                      Margin="0,0,0,16"/>
 
                                         <TextBox Grid.Row="1" Grid.Column="2"
                      Style="{StaticResource RsdTextBox}"
                      Text="{Binding LevelBelowHeight_ft, UpdateSourceTrigger=LostFocus}"
                      local:EnterUpdatesTextBox.UpdateOnEnter="True"
-                     materialDesign:HintAssist.Hint="Enter level below height"
+                     materialDesign:HintAssist.Hint="Level below height (ft)"
                      Margin="0,0,0,16"/>
 
                                         <!-- Row 2 labels -->
@@ -2120,7 +2194,7 @@ Opacity="0.6"/>
                      Text="{Binding SourceToFloor_ft, UpdateSourceTrigger=LostFocus}"
                      local:EnterUpdatesTextBox.UpdateOnEnter="True"
                      IsReadOnly="{Binding IsCT}"
-                     materialDesign:HintAssist.Hint="Source to floor"
+                     materialDesign:HintAssist.Hint="Source to floor (ft)"
                      Margin="0,0,0,16">
                                             <TextBox.ToolTip>
                                                 <ToolTip>
@@ -2134,7 +2208,7 @@ Opacity="0.6"/>
                      Text="{Binding SourceToCeiling_ft, UpdateSourceTrigger=LostFocus}"
                      local:EnterUpdatesTextBox.UpdateOnEnter="True"
                      IsReadOnly="{Binding IsCT}"
-                     materialDesign:HintAssist.Hint="Source to ceiling"
+                     materialDesign:HintAssist.Hint="Source to ceiling (ft)"
                      Margin="0,0,0,16">
                                             <TextBox.ToolTip>
                                                 <ToolTip>
@@ -2192,7 +2266,7 @@ Opacity="0.6"/>
                              Style="{StaticResource RsdTextBox}"
                              Text="{Binding CtIsoCenterHeight_ft, UpdateSourceTrigger=LostFocus}"
                              local:EnterUpdatesTextBox.UpdateOnEnter="True"
-                             materialDesign:HintAssist.Hint="Enter CT iso-center height"/>
+                             materialDesign:HintAssist.Hint="CT iso-center height (ft)"/>
                                             </Grid>
                                         </StackPanel>
                                     </Grid>
@@ -2715,7 +2789,7 @@ VerticalAlignment="Center"/>
                      Style="{StaticResource RsdTextBox}"
                      Text="{Binding ConvMetersText, UpdateSourceTrigger=PropertyChanged, Delay=250}"
                      local:EnterUpdatesTextBox.UpdateOnEnter="True"
-                     materialDesign:HintAssist.Hint="Enter meters"/>
+                     materialDesign:HintAssist.Hint="Meters"/>
                                     </Grid>
                                 </StackPanel>
                             </materialDesign:Card>

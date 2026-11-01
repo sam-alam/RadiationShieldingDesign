@@ -518,8 +518,13 @@ public partial class BarrierItemViewModel : ObservableObject, IDisposable
     }
 
 
+    // Join only the parts that exist, so an unlabeled barrier doesn't start with a stray dash.
     public string DisplayName =>
-       $"{(string.IsNullOrWhiteSpace(Label) ? "—" : Label)} - {Kind} - {Designation} - {ProtectedArea}".Trim();
+        string.Join(" - ", new[] { Label, Kind.ToString(), Designation.ToString(), ProtectedArea }
+            .Where(p => !string.IsNullOrWhiteSpace(p)));
+
+    /// <summary>Which limit set the thickness ("Weekly", "Hourly"); empty when not applicable (x-ray, PET, none needed).</summary>
+    [ObservableProperty] private string governingLimit = "";
 
 
    

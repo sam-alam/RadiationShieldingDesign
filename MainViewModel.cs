@@ -2859,6 +2859,7 @@ public partial class MainViewModel : ObservableObject
 
         // NEW: refresh distance only for this barrier
         RefreshBarrierDistance(b);
+        b.GoverningLimit = "";   // only nuclear (SPECT) results set this
 
         TraceItems.Clear();
         var kResolved = ResolveK1For(b, true);
@@ -3571,6 +3572,7 @@ public partial class MainViewModel : ObservableObject
             foreach (BarrierItemViewModel b in e.NewItems)
                 HookBarrierDirty(b);
 
+        OnPropertyChanged(nameof(BarrierSummaryText));
         MarkDirty();
     }
 
@@ -3594,6 +3596,11 @@ public partial class MainViewModel : ObservableObject
 
     private void Barrier_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
+        if (e.PropertyName is nameof(BarrierItemViewModel.RequiredThickness_mm)
+            or nameof(BarrierItemViewModel.MaterialName)
+            or nameof(BarrierItemViewModel.GoverningLimit))
+            OnPropertyChanged(nameof(BarrierSummaryText));
+
         if (_suspendDirty) return;
         if (e.PropertyName is null) { MarkDirty(); return; }
 

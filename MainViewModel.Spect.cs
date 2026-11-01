@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using RadiationShieldingDesign.Engine.Nuclear;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -203,6 +203,7 @@ public partial class MainViewModel
 
         // ---- Result (same rounding/display path as PET) ----
         b.RequiredThickness_mm = res.RequiredThickness_mm;
+        b.GoverningLimit = res.Governing == "None" ? "" : res.Governing;
         b.ApplyThicknessRounding();
 
         var req_ = !string.IsNullOrWhiteSpace(b.ThicknessShortDisplay) ? b.ThicknessShortDisplay : $"{b.RequiredThickness_mm:F2} mm";

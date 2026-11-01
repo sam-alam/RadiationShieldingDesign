@@ -462,6 +462,8 @@ namespace RadiationShieldingDesign
 
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
+            if (HandleShortcut(e)) { e.Handled = true; return; }
+
             // don’t interfere when typing
             if (!IsTypingInTextBox())
             {
@@ -500,6 +502,50 @@ namespace RadiationShieldingDesign
             base.OnPreviewKeyDown(e);
         }
 
+
+        /// <summary>
+        /// App shortcuts. Ctrl combinations work everywhere (a value being typed is committed first);
+        /// Delete and Ctrl+D act on the selected barrier only when you're not typing in a box.
+        /// </summary>
+        private bool HandleShortcut(KeyEventArgs e)
+        {
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
+            var mods = Keyboard.Modifiers;
+            bool ctrl = mods == ModifierKeys.Control;
+            bool ctrlShift = mods == (ModifierKeys.Control | ModifierKeys.Shift);
+            var none = new RoutedEventArgs();
+
+            if (ctrl && key == Key.S) { CommitFocusedTextBox(); MenuSave_Click(this, none); return true; }
+            if (ctrlShift && key == Key.S) { CommitFocusedTextBox(); MenuSaveAs_Click(this, none); return true; }
+            if (ctrl && key == Key.O) { MenuOpen_Click(this, none); return true; }
+            if (ctrl && key == Key.E) { CommitFocusedTextBox(); OpenExportDialog(); return true; }
+            if (ctrl && key == Key.Enter)
+            {
+                CommitFocusedTextBox();
+                if (VM.ComputeAllCommand.CanExecute(null)) VM.ComputeAllCommand.Execute(null);
+                return true;
+            }
+
+            if (IsTypingInTextBox()) return false;
+
+            if (mods == ModifierKeys.None && key == Key.Delete && VM.SelectedBarrier != null)
+            {
+                if (VM.RemoveSelectedCommand.CanExecute(null)) VM.RemoveSelectedCommand.Execute(null);
+                return true;
+            }
+            if (ctrl && key == Key.D && VM.SelectedBarrier != null)
+            {
+                VM.DuplicateSelectedBarrier();
+                return true;
+            }
+            return false;
+        }
+
+        private static void CommitFocusedTextBox()
+        {
+            if (Keyboard.FocusedElement is TextBox tb)
+                tb.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+        }
 
         protected override void OnPreviewMouseWheel(MouseWheelEventArgs e)
         {
