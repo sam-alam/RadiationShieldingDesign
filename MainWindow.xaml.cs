@@ -63,6 +63,8 @@ namespace RadiationShieldingDesign
                 {
                     UpdateWindowTitle();
                 }
+                if (e.PropertyName == nameof(MainViewModel.SelectedBarrier))
+                    RevealSelectedBarrier();
             };
 
             UpdateWindowTitle();
@@ -572,6 +574,25 @@ namespace RadiationShieldingDesign
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// When a barrier is selected (canvas or list), jump the left panel to its settings and make sure
+        /// it is visible in the right-hand barrier list. Skipped while typing so the panel doesn't jump mid-edit.
+        /// </summary>
+        private void RevealSelectedBarrier()
+        {
+            var b = VM.SelectedBarrier;
+            if (b == null || IsTypingInTextBox()) return;
+
+            Dispatcher.InvokeAsync(() =>
+            {
+                if (LeftPanelScroll != null && SelectedBarrierHeader != null)
+                    PanelScroll.ScrollToTop(LeftPanelScroll, SelectedBarrierHeader);
+
+                if (BarrierList?.ItemContainerGenerator.ContainerFromItem(b) is FrameworkElement item)
+                    item.BringIntoView();
+            }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         private static void CommitFocusedTextBox()
