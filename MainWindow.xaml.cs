@@ -1900,6 +1900,11 @@ namespace RadiationShieldingDesign
             UpdateDistanceForBarrier(b);
         }
       
+        private void MenuSpectSuite_Click(object sender, RoutedEventArgs e)
+        {
+            new SpectSuiteWindow { Owner = this }.Show();
+        }
+
         private void MenuTips_Click(object sender, RoutedEventArgs e)
         {
             var w = new TipsWindow
