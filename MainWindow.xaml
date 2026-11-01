@@ -980,38 +980,62 @@
                                                     <StackPanel Margin="0,0,0,8">
                                                         <CheckBox Content="{Binding Protocol}" IsChecked="{Binding IsEnabled}"
                                                       FontWeight="SemiBold" Margin="0,0,0,6"/>
-                                                        <WrapPanel Margin="22,0,0,0"
+                                                        <StackPanel Margin="22,0,0,4"
                                                        Visibility="{Binding IsEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
-                                                         materialDesign:HintAssist.Hint="Patients / week"
-                                                         Text="{Binding PatientsPerWeekText, UpdateSourceTrigger=PropertyChanged}"/>
-                                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
-                                                         materialDesign:HintAssist.Hint="{Binding Activity1Label}"
-                                                         Text="{Binding Activity1Text, UpdateSourceTrigger=PropertyChanged}"/>
-                                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
-                                                         materialDesign:HintAssist.Hint="{Binding Activity2Label}"
-                                                         Visibility="{Binding HasActivity2, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                         Text="{Binding Activity2Text, UpdateSourceTrigger=PropertyChanged}"/>
-                                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
-                                                         materialDesign:HintAssist.Hint="{Binding WaitLabel}"
-                                                         Visibility="{Binding HasWait, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                         Text="{Binding WaitText, UpdateSourceTrigger=PropertyChanged}"/>
-                                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
-                                                         materialDesign:HintAssist.Hint="Scan (min)"
-                                                         Text="{Binding ScanText, UpdateSourceTrigger=PropertyChanged}"/>
-                                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
-                                                         materialDesign:HintAssist.Hint="{Binding GapLabel}"
-                                                         Visibility="{Binding HasGap, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                         Text="{Binding GapText, UpdateSourceTrigger=PropertyChanged}"/>
-                                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
-                                                         materialDesign:HintAssist.Hint="Stress (min)"
-                                                         Visibility="{Binding HasStress, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                         Text="{Binding StressText, UpdateSourceTrigger=PropertyChanged}"/>
-                                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
-                                                         materialDesign:HintAssist.Hint="Post-stress wait (min)"
-                                                         Visibility="{Binding HasStress, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                         Text="{Binding PostStressWaitText, UpdateSourceTrigger=PropertyChanged}"/>
-                                                        </WrapPanel>
+                                                            <DockPanel Margin="0,0,0,6">
+                                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                                         HorizontalContentAlignment="Center"
+                                                                         Text="{Binding PatientsPerWeekText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                                <TextBlock Text="Patients / week" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                                            </DockPanel>
+                                                            <DockPanel Margin="0,0,0,6">
+                                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                                         HorizontalContentAlignment="Center"
+                                                                         Text="{Binding Activity1Text, UpdateSourceTrigger=PropertyChanged}"/>
+                                                                <TextBlock Text="{Binding Activity1Label}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                                            </DockPanel>
+                                                            <DockPanel Margin="0,0,0,6"
+                                                                       Visibility="{Binding HasActivity2, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                                         HorizontalContentAlignment="Center"
+                                                                         Text="{Binding Activity2Text, UpdateSourceTrigger=PropertyChanged}"/>
+                                                                <TextBlock Text="{Binding Activity2Label}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                                            </DockPanel>
+                                                            <DockPanel Margin="0,0,0,6"
+                                                                       Visibility="{Binding HasWait, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                                         HorizontalContentAlignment="Center"
+                                                                         Text="{Binding WaitText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                                <TextBlock Text="{Binding WaitLabel}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                                            </DockPanel>
+                                                            <DockPanel Margin="0,0,0,6">
+                                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                                         HorizontalContentAlignment="Center"
+                                                                         Text="{Binding ScanText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                                <TextBlock Text="Scan (min)" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                                            </DockPanel>
+                                                            <DockPanel Margin="0,0,0,6"
+                                                                       Visibility="{Binding HasGap, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                                         HorizontalContentAlignment="Center"
+                                                                         Text="{Binding GapText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                                <TextBlock Text="{Binding GapLabel}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                                            </DockPanel>
+                                                            <DockPanel Margin="0,0,0,6"
+                                                                       Visibility="{Binding HasStress, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                                         HorizontalContentAlignment="Center"
+                                                                         Text="{Binding StressText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                                <TextBlock Text="Stress (min)" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                                            </DockPanel>
+                                                            <DockPanel Margin="0,0,0,6"
+                                                                       Visibility="{Binding HasStress, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                                         HorizontalContentAlignment="Center"
+                                                                         Text="{Binding PostStressWaitText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                                <TextBlock Text="Post-stress wait (min)" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                                            </DockPanel>
+                                                        </StackPanel>
                                                     </StackPanel>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
@@ -1020,20 +1044,32 @@
                                         <TextBlock Text="HOURLY CHECK (uncontrolled areas)"
                                        Style="{StaticResource RsdSectionOverlineTextBlock}"
                                        Opacity="0.6" Margin="0,6,0,8"/>
-                                        <WrapPanel>
-                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
-                                         materialDesign:HintAssist.Hint="Max pts at once: waiting"
-                                         Text="{Binding SpectMaxPtsWaitingText, UpdateSourceTrigger=PropertyChanged}"/>
-                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
-                                         materialDesign:HintAssist.Hint="Max pts at once: camera"
-                                         Text="{Binding SpectMaxPtsCameraText, UpdateSourceTrigger=PropertyChanged}"/>
-                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
-                                         materialDesign:HintAssist.Hint="Max pts at once: stress"
-                                         Text="{Binding SpectMaxPtsStressText, UpdateSourceTrigger=PropertyChanged}"/>
-                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
-                                         materialDesign:HintAssist.Hint="Limit (mSv in any hour)"
-                                         Text="{Binding SpectHourlyLimitText, UpdateSourceTrigger=PropertyChanged}"/>
-                                        </WrapPanel>
+                                        <StackPanel>
+                                            <DockPanel Margin="0,0,0,6">
+                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                         HorizontalContentAlignment="Center"
+                                                         Text="{Binding SpectMaxPtsWaitingText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBlock Text="Max patients at once: waiting" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                            </DockPanel>
+                                            <DockPanel Margin="0,0,0,6">
+                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                         HorizontalContentAlignment="Center"
+                                                         Text="{Binding SpectMaxPtsCameraText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBlock Text="Max patients at once: camera" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                            </DockPanel>
+                                            <DockPanel Margin="0,0,0,6">
+                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                         HorizontalContentAlignment="Center"
+                                                         Text="{Binding SpectMaxPtsStressText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBlock Text="Max patients at once: stress" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                            </DockPanel>
+                                            <DockPanel Margin="0,0,0,6">
+                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                         HorizontalContentAlignment="Center"
+                                                         Text="{Binding SpectHourlyLimitText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBlock Text="Hourly limit (mSv in any hour)" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                            </DockPanel>
+                                        </StackPanel>
                                     </StackPanel>
                                 </materialDesign:Card>
 
