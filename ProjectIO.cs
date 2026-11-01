@@ -158,6 +158,13 @@ public static class ProjectIO
             vm.PetPatientDoseConstManual = dto.PetPatientDoseConstManual;
             vm.PetPatientDoseConst_uSv_m2_per_MBq_h = dto.PetPatientDoseConst_uSv_m2_per_MBq_h;
 
+            // SPECT
+            vm.SpectStudiesFromDto(dto.SpectStudies);
+            if (dto.SpectMaxPtsWaitingText != null) vm.SpectMaxPtsWaitingText = dto.SpectMaxPtsWaitingText;
+            if (dto.SpectMaxPtsCameraText != null) vm.SpectMaxPtsCameraText = dto.SpectMaxPtsCameraText;
+            if (dto.SpectMaxPtsStressText != null) vm.SpectMaxPtsStressText = dto.SpectMaxPtsStressText;
+            if (dto.SpectHourlyLimitText != null) vm.SpectHourlyLimitText = dto.SpectHourlyLimitText;
+
             // Survey
             vm.SurveyRate_mR_per_h = dto.SurveyRate_mR_per_h;
             vm.SurveyOnTime_h_per_week = dto.SurveyOnTime_h_per_week;
@@ -434,6 +441,9 @@ public static class ProjectIO
             ScatterUGyPerGyCm2At1m = d.ScatterUGyPerGyCm2At1m,
 
             PetRegion = d.PetRegion,
+            SpectSeesWaiting = d.SpectSeesWaiting,
+            SpectSeesCamera = d.SpectSeesCamera,
+            SpectSeesStress = d.SpectSeesStress,
 
             LinkedSecondaryId = d.LinkedSecondaryId,
             TwinSecondaryId = d.TwinSecondaryId,
@@ -526,6 +536,12 @@ public static class ProjectIO
             PetPatientDoseConstManual = vm.PetPatientDoseConstManual,
             PetPatientDoseConst_uSv_m2_per_MBq_h = vm.PetPatientDoseConst_uSv_m2_per_MBq_h,
 
+            SpectStudies = vm.SpectStudiesToDto(),
+            SpectMaxPtsWaitingText = vm.SpectMaxPtsWaitingText,
+            SpectMaxPtsCameraText = vm.SpectMaxPtsCameraText,
+            SpectMaxPtsStressText = vm.SpectMaxPtsStressText,
+            SpectHourlyLimitText = vm.SpectHourlyLimitText,
+
             SurveyRate_mR_per_h = vm.SurveyRate_mR_per_h,
             SurveyOnTime_h_per_week = vm.SurveyOnTime_h_per_week,
             SurveyPerExam_mR = vm.SurveyPerExam_mR,
@@ -609,6 +625,9 @@ public static class ProjectIO
                 ScatterUGyPerGyCm2At1m = b.ScatterUGyPerGyCm2At1m,
 
                 PetRegion = b.PetRegion,
+                SpectSeesWaiting = b.SpectSeesWaiting,
+                SpectSeesCamera = b.SpectSeesCamera,
+                SpectSeesStress = b.SpectSeesStress,
 
                 LinkedSecondaryId = b.LinkedSecondaryId,
                 TwinSecondaryId = b.TwinSecondaryId,

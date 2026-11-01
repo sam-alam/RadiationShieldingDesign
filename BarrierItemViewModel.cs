@@ -67,9 +67,11 @@ public partial class BarrierItemViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(EffectiveDistance_m));
         }
         if (e.PropertyName == nameof(MainViewModel.SelectedRoomCategory) ||
-    e.PropertyName == nameof(MainViewModel.IsPET))
+    e.PropertyName == nameof(MainViewModel.IsPET) ||
+    e.PropertyName == nameof(MainViewModel.IsSPECT))
         {
             OnPropertyChanged(nameof(ShowPetRegionSelector));
+            OnPropertyChanged(nameof(ShowSpectRegionSelector));
         }
     }
 
@@ -149,7 +151,12 @@ public partial class BarrierItemViewModel : ObservableObject, IDisposable
     [ObservableProperty] private double scatterUGyPerGyCm2At1m;         // µGy/(Gy·cm²) @ 1 m
 
     [ObservableProperty] private PetSourceRegion petRegion = PetSourceRegion.Both;
-    public bool CanUseNcrpK => !_owner.IsPET && !_owner.IsCT;
+    public bool CanUseNcrpK => !_owner.IsNuclear && !_owner.IsCT;
+
+    // SPECT suite: which source regions this barrier sees (all at the drawn source-to-barrier distance)
+    [ObservableProperty] private bool spectSeesWaiting = true;
+    [ObservableProperty] private bool spectSeesCamera = true;
+    [ObservableProperty] private bool spectSeesStress = true;
 
   
 
@@ -329,9 +336,15 @@ public partial class BarrierItemViewModel : ObservableObject, IDisposable
     _owner.SelectedRoomCategory is "PET/CT Suite (Uptake + PET)" &&
     Kind == BarrierKind.Secondary;
 
+    public bool ShowSpectRegionSelector =>
+    _owner is not null &&
+    _owner.IsSpectSuite &&
+    Kind == BarrierKind.Secondary;
+
     partial void OnIsSelectedChanged(bool value)
     {
         OnPropertyChanged(nameof(ShowPetRegionSelector));
+        OnPropertyChanged(nameof(ShowSpectRegionSelector));
     }
 
     partial void OnHasLinkedSecondaryChanged(bool value)
@@ -406,6 +419,7 @@ public partial class BarrierItemViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(CanUseNcrpK));
         OnPropertyChanged(nameof(IsK1ReadOnly));
         OnPropertyChanged(nameof(ShowPetRegionSelector));
+        OnPropertyChanged(nameof(ShowSpectRegionSelector));
     }
 
     private void OnK1Edited()

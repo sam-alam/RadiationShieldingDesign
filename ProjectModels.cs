@@ -91,6 +91,13 @@ public sealed class ProjectDto
     public bool PetPatientDoseConstManual { get; set; }
     public double PetPatientDoseConst_uSv_m2_per_MBq_h { get; set; }
 
+    // SPECT (null in older project files → defaults are kept)
+    public List<SpectStudyDto>? SpectStudies { get; set; }
+    public string? SpectMaxPtsWaitingText { get; set; }
+    public string? SpectMaxPtsCameraText { get; set; }
+    public string? SpectMaxPtsStressText { get; set; }
+    public string? SpectHourlyLimitText { get; set; }
+
     // Survey
     public double SurveyRate_mR_per_h { get; set; }
     public double SurveyOnTime_h_per_week { get; set; }
@@ -159,6 +166,11 @@ public sealed class BarrierDto
 
     public PetSourceRegion PetRegion { get; set; }
 
+    // SPECT suite source regions (default true so older files see every region)
+    public bool SpectSeesWaiting { get; set; } = true;
+    public bool SpectSeesCamera { get; set; } = true;
+    public bool SpectSeesStress { get; set; } = true;
+
     public Guid? LinkedSecondaryId { get; set; }
     public Guid? TwinSecondaryId { get; set; }
     public bool HasLinkedSecondary { get; set; }
@@ -177,3 +189,16 @@ public sealed class PreexistingLayerDto
     public string? ThicknessUnit { get; set; } // "mm","cm","in"
 }
 
+public sealed class SpectStudyDto
+{
+    public string Protocol { get; set; } = "";
+    public bool IsEnabled { get; set; }
+    public string? PatientsPerWeekText { get; set; }
+    public string? Activity1Text { get; set; }
+    public string? Activity2Text { get; set; }
+    public string? WaitText { get; set; }
+    public string? ScanText { get; set; }
+    public string? GapText { get; set; }
+    public string? StressText { get; set; }
+    public string? PostStressWaitText { get; set; }
+}

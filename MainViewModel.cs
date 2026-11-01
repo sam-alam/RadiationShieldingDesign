@@ -94,7 +94,11 @@ public partial class MainViewModel : ObservableObject
         "CT",
         "PET/CT (PET room)",
         "PET Uptake room",
-        "PET/CT Suite (Uptake + PET)"
+        "PET/CT Suite (Uptake + PET)",
+        SpectCameraRoom,
+        SpectWaitingRoom,
+        SpectStressRoom,
+        SpectSuite
     };
 
     public IReadOnlyList<BarrierDesignation> AllDesignations { get; } =
@@ -174,7 +178,7 @@ public partial class MainViewModel : ObservableObject
     string.Equals(SelectedRoomCategory, "PET/CT (PET room)", StringComparison.OrdinalIgnoreCase) ||
     string.Equals(SelectedRoomCategory, "PET Uptake room", StringComparison.OrdinalIgnoreCase) ||
     string.Equals(SelectedRoomCategory, "PET/CT Suite (Uptake + PET)", StringComparison.OrdinalIgnoreCase);
-    public IEnumerable<string> MaterialNamesForUi => IsPET ? MaterialNamesPet : MaterialNames;
+    public IEnumerable<string> MaterialNamesForUi => IsPET ? MaterialNamesPet : IsSPECT ? MaterialNamesSpect : MaterialNames;
 
 
     [ObservableProperty]
@@ -199,6 +203,7 @@ public partial class MainViewModel : ObservableObject
     {
         // Load data bundle
         HasActiveDesign = false;
+        HookSpectStudies();
         _startDesignCommand = new RelayCommand(ExecuteStartDesign, CanStartDesign);
         var baseDir = AppDomain.CurrentDomain.BaseDirectory;
         var bundlePath = Path.Combine(baseDir, "Data", "ncrp147_data_bundle.json");
@@ -522,6 +527,17 @@ public partial class MainViewModel : ObservableObject
                 b.KSource = "PET";
                 b.NotifyPetRoomStateChanged();
             }
+        }
+        if (IsSPECT)
+        {
+            foreach (var b in Barriers)
+            {
+                b.UseNcrpK = false;
+                b.SetK1FromEngine(0.0);
+                b.KSource = "SPECT";
+                b.NotifyPetRoomStateChanged();
+            }
+            RecomputeAllSpect();
         }
     }
 
@@ -1010,6 +1026,13 @@ public partial class MainViewModel : ObservableObject
     // 4) Final resolver — keeps UseNcrpK and normalization independent
     private double ResolveK1For(BarrierItemViewModel b, bool logTrace)
     {
+        // SPECT: dose is computed per nuclide by NuclearBarrierSolver; there is no single K1.
+        if (IsSPECT)
+        {
+            b.KSource = "SPECT";
+            return 0.0;
+        }
+
         // ───────────────────────────────────────────────────────────────
         // 1) True manual override always wins (only when user actually typed K1)
         // ───────────────────────────────────────────────────────────────
@@ -1240,7 +1263,7 @@ public partial class MainViewModel : ObservableObject
 
     private void ApplyNcrpPatientsIfLocked()
     {
-        if (IsPET) return;   // NCRP avg/busy should not overwrite PET throughput
+        if (IsNuclear) return;   // NCRP avg/busy should not overwrite PET/SPECT throughput
 
         if (!IsPatientsNcrpLocked) return;
 
@@ -1328,7 +1351,11 @@ public partial class MainViewModel : ObservableObject
         or nameof(BarrierItemViewModel.Designation)
         or nameof(BarrierItemViewModel.IsCtTertiary)
         or nameof(BarrierItemViewModel.TertiaryHeight_m)
-        or nameof(BarrierItemViewModel.TertiaryHeightText))
+        or nameof(BarrierItemViewModel.TertiaryHeightText)
+        or nameof(BarrierItemViewModel.PetRegion)
+        or nameof(BarrierItemViewModel.SpectSeesWaiting)
+        or nameof(BarrierItemViewModel.SpectSeesCamera)
+        or nameof(BarrierItemViewModel.SpectSeesStress))
         {
             ComputeBarrier(b);
         }
@@ -1662,7 +1689,8 @@ public partial class MainViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(room)) return false;
 
         return room is "Fluoro Tube (R&F room)" or "C-arm" or "Mammography" or "CT"
-            or "Cardiac Angio" or "Peripheral Angio" or "PET/CT (PET room)" or "PET Uptake room" or "PET/CT Suite (Uptake + PET)";
+            or "Cardiac Angio" or "Peripheral Angio" or "PET/CT (PET room)" or "PET Uptake room" or "PET/CT Suite (Uptake + PET)"
+            || IsSpectCategory(room);
     }
 
     private static string BareBarrierTitle(BarrierItemViewModel b)
@@ -1706,7 +1734,7 @@ public partial class MainViewModel : ObservableObject
                 PreShieldType = preType ?? "",
                 ProtectedArea = area
             };
-            b.UseNcrpK = !IsPET && !(kind == BarrierKind.Primary && IsTypicallySecondaryRoom(SelectedRoomCategory!));
+            b.UseNcrpK = !IsNuclear && !(kind == BarrierKind.Primary && IsTypicallySecondaryRoom(SelectedRoomCategory!));
             b.InitDisplayName();
             b.RefreshLabelPosition();
             Barriers.Add(b);
@@ -1871,6 +1899,20 @@ public partial class MainViewModel : ObservableObject
             top.PetRegion = PetSourceRegion.PetRoom;
             bottom.PetRegion = PetSourceRegion.Uptake;
 
+            SelectedBarrier = top;
+        }
+        else if (IsSpectCategory(cat))
+        {
+            // SPECT rooms: secondary-only walls, patient is the source. Default lead; change to the actual wall
+            // material (e.g. Gypsum Wallboard) and add existing construction as pre-existing layers.
+            var top = AddWall("Secondary – Top wall", BarrierKind.Secondary, BarrierDesignation.Wall,
+                260, 180, 860, 180, U: 1.0, T: 1.0, zone: "Uncontrolled", area: "Corridor");
+            var left = AddWall("Secondary – Left wall", BarrierKind.Secondary, BarrierDesignation.Wall,
+                260, 180, 260, 640, U: 1.0, T: 1.0, zone: "Controlled", area: "Control area");
+            var right = AddWall("Secondary – Right wall", BarrierKind.Secondary, BarrierDesignation.Wall,
+                860, 180, 860, 640, U: 1.0, T: 1.0, zone: "Uncontrolled", area: "Office");
+            var bottom = AddWall("Secondary – Bottom wall", BarrierKind.Secondary, BarrierDesignation.Wall,
+                260, 640, 860, 640, U: 1.0, T: 1.0, zone: "Uncontrolled", area: "Waiting room");
             SelectedBarrier = top;
         }
         else
@@ -2231,7 +2273,7 @@ public partial class MainViewModel : ObservableObject
         Barriers.Add(b);
         b.GetCanvasDistance_m = ComputeCanvasDistance_m;
         SelectedBarrier = b;
-        b.UseNcrpK = !IsPET && !IsTypicallySecondaryRoom(SelectedRoomCategory); // allow manual/map by default in those rooms
+        b.UseNcrpK = !IsNuclear && !IsTypicallySecondaryRoom(SelectedRoomCategory); // allow manual/map by default in those rooms
         AutoFillBarrierFromTables(b);
         UpdateCanvasExtent();
     }
@@ -2258,7 +2300,7 @@ public partial class MainViewModel : ObservableObject
             ApplyPreShield = false,
             ProtectedArea = "Office"
         };
-        if (!IsPET && !IsCT)
+        if (!IsNuclear && !IsCT)
             b.UseNcrpK = true;
         else
             b.UseNcrpK = false;
@@ -2380,6 +2422,9 @@ public partial class MainViewModel : ObservableObject
             ScatterUGyPerGyCm2At1m = src.ScatterUGyPerGyCm2At1m,
 
             PetRegion = src.PetRegion,
+            SpectSeesWaiting = src.SpectSeesWaiting,
+            SpectSeesCamera = src.SpectSeesCamera,
+            SpectSeesStress = src.SpectSeesStress,
         };
 
         // Copy saved distance behavior
@@ -2698,7 +2743,7 @@ public partial class MainViewModel : ObservableObject
  new() { "None", "Lead", "Concrete", "Iron" };
 
     public IEnumerable<string> PreexistingMaterialNamesForUi
-    => IsPET ? PreexistingMaterialNamesPet : PreexistingMaterialNames;
+    => IsPET ? PreexistingMaterialNamesPet : IsSPECT ? PreexistingMaterialNamesSpect : PreexistingMaterialNames;
 
     private void EnforcePetPreLayersIfNeeded()
     {
@@ -2827,6 +2872,12 @@ public partial class MainViewModel : ObservableObject
         }
 
         double N_eff = PatientsPerWeek;
+
+        if (IsSPECT)
+        {
+            ComputeSpectBarrier(b);
+            return;
+        }
 
         if (IsPET)
         {
@@ -3190,10 +3241,14 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(IsXrayRoom));
         OnPropertyChanged(nameof(IsCT));
         OnPropertyChanged(nameof(IsPET));
+        OnPropertyChanged(nameof(IsSPECT));
+        OnPropertyChanged(nameof(IsSpectSuite));
+        OnPropertyChanged(nameof(IsNuclear));
         OnPropertyChanged(nameof(PreexistingMaterialNamesForUi));
         EnforcePetPreLayersIfNeeded();
         OnPropertyChanged(nameof(MaterialNamesForUi));
         EnforcePetMaterialOnAllBarriersIfNeeded();
+        EnforceSpectMaterialsIfNeeded();
 
             BackgroundImage = null;
             BackgroundOpacity = 0.0;
@@ -3236,6 +3291,17 @@ public partial class MainViewModel : ObservableObject
                 b.KSource = "PET";
                 b.NotifyPetRoomStateChanged();
             }
+        }
+        else if (IsSPECT)
+        {
+            foreach (var b in Barriers)
+            {
+                b.UseNcrpK = false;
+                b.SetK1FromEngine(0.0);
+                b.KSource = "SPECT";
+                b.NotifyPetRoomStateChanged();
+            }
+            RecomputeAllSpect();
         }
         else
         {
@@ -3484,6 +3550,11 @@ public partial class MainViewModel : ObservableObject
         IsLoadingProject = false;
         OnPropertyChanged(nameof(IsCT));
         OnPropertyChanged(nameof(IsPET));
+        OnPropertyChanged(nameof(IsSPECT));
+        OnPropertyChanged(nameof(IsSpectSuite));
+        OnPropertyChanged(nameof(IsNuclear));
+        OnPropertyChanged(nameof(MaterialNamesForUi));
+        OnPropertyChanged(nameof(PreexistingMaterialNamesForUi));
         OnPropertyChanged(nameof(IsXrayRoom));
         RaiseCtDlpWeekChanged();
         _suspendDirty = false;
@@ -3565,6 +3636,8 @@ public partial class MainViewModel : ObservableObject
     {
         if (_suspendDirty) return;
         MarkDirty();
+        if (IsSPECT && SelectedBarrier != null)
+            ComputeBarrier(SelectedBarrier);
     }
 
     private void CacheTraceToBarrier(BarrierItemViewModel b)

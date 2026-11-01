@@ -748,8 +748,6 @@
                 <MenuItem Header="Save _As..." Click="MenuSaveAs_Click"/>
                 <Separator/>
                 <MenuItem Header="_Export Report..." Click="MenuExport_Click"/>
-                <Separator/>
-                <MenuItem Header="SPECT _Suite..." Click="MenuSpectSuite_Click"/>
             </MenuItem>
 
             <MenuItem Header="_Help">
@@ -960,6 +958,85 @@
                                     </StackPanel>
                                 </materialDesign:Card>
 
+                                <!-- CARD: SPECT Parameters (conditional) -->
+                                <materialDesign:Card Margin="0,0,0,10" UniformCornerRadius="10"
+                                         Visibility="{Binding IsSPECT, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <StackPanel Margin="14,12">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                            <materialDesign:PackIcon Kind="Radioactive" Width="18" Height="18"
+                                                         VerticalAlignment="Center" Margin="0,0,8,0"
+                                                         Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                            <TextBlock Text="SPECT Parameters"
+                                           Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                           VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Tick each study the site performs and enter patients/week. Activities in mCi, times in minutes."
+                                       Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                       TextWrapping="Wrap" Opacity="0.6" Margin="0,0,0,10"/>
+
+                                        <ItemsControl ItemsSource="{Binding SpectStudies}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Margin="0,0,0,8">
+                                                        <CheckBox Content="{Binding Protocol}" IsChecked="{Binding IsEnabled}"
+                                                      FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                                        <WrapPanel Margin="22,0,0,0"
+                                                       Visibility="{Binding IsEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
+                                                         materialDesign:HintAssist.Hint="Patients / week"
+                                                         Text="{Binding PatientsPerWeekText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
+                                                         materialDesign:HintAssist.Hint="{Binding Activity1Label}"
+                                                         Text="{Binding Activity1Text, UpdateSourceTrigger=PropertyChanged}"/>
+                                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
+                                                         materialDesign:HintAssist.Hint="{Binding Activity2Label}"
+                                                         Visibility="{Binding HasActivity2, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                         Text="{Binding Activity2Text, UpdateSourceTrigger=PropertyChanged}"/>
+                                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
+                                                         materialDesign:HintAssist.Hint="{Binding WaitLabel}"
+                                                         Visibility="{Binding HasWait, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                         Text="{Binding WaitText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
+                                                         materialDesign:HintAssist.Hint="Scan (min)"
+                                                         Text="{Binding ScanText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
+                                                         materialDesign:HintAssist.Hint="{Binding GapLabel}"
+                                                         Visibility="{Binding HasGap, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                         Text="{Binding GapText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
+                                                         materialDesign:HintAssist.Hint="Stress (min)"
+                                                         Visibility="{Binding HasStress, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                         Text="{Binding StressText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
+                                                         materialDesign:HintAssist.Hint="Post-stress wait (min)"
+                                                         Visibility="{Binding HasStress, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                         Text="{Binding PostStressWaitText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                        </WrapPanel>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <TextBlock Text="HOURLY CHECK (uncontrolled areas)"
+                                       Style="{StaticResource RsdSectionOverlineTextBlock}"
+                                       Opacity="0.6" Margin="0,6,0,8"/>
+                                        <WrapPanel>
+                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
+                                         materialDesign:HintAssist.Hint="Max pts at once: waiting"
+                                         Text="{Binding SpectMaxPtsWaitingText, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
+                                         materialDesign:HintAssist.Hint="Max pts at once: camera"
+                                         Text="{Binding SpectMaxPtsCameraText, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
+                                         materialDesign:HintAssist.Hint="Max pts at once: stress"
+                                         Text="{Binding SpectMaxPtsStressText, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <TextBox Style="{StaticResource RsdTextBox}" Width="150" Margin="0,0,8,10"
+                                         materialDesign:HintAssist.Hint="Limit (mSv in any hour)"
+                                         Text="{Binding SpectHourlyLimitText, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </WrapPanel>
+                                    </StackPanel>
+                                </materialDesign:Card>
+
                                 <!-- Divider -->
                                 <Rectangle Height="1" Fill="{DynamicResource MaterialDesignDivider}" Margin="0,2,0,10"/>
 
@@ -1033,6 +1110,19 @@
                                                     <ComboBoxItem Content="PET" Tag="{x:Static eng:PetSourceRegion.PetRoom}"/>
                                                     <ComboBoxItem Content="Both" Tag="{x:Static eng:PetSourceRegion.Both}"/>
                                                 </ComboBox>
+                                            </StackPanel>
+
+                                            <!-- SPECT suite: source regions this barrier sees (conditional) -->
+                                            <StackPanel Visibility="{Binding ShowSpectRegionSelector, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            Margin="0,0,0,10">
+                                                <TextBlock Text="SPECT SOURCE REGIONS SEEN"
+                                               Style="{StaticResource RsdSectionOverlineTextBlock}"
+                                               Opacity="0.6" Margin="0,0,0,6"/>
+                                                <WrapPanel>
+                                                    <CheckBox Content="Waiting" IsChecked="{Binding SpectSeesWaiting}" Margin="0,0,16,0"/>
+                                                    <CheckBox Content="Camera" IsChecked="{Binding SpectSeesCamera}" Margin="0,0,16,0"/>
+                                                    <CheckBox Content="Stress" IsChecked="{Binding SpectSeesStress}"/>
+                                                </WrapPanel>
                                             </StackPanel>
 
                                             <TextBox Style="{StaticResource RsdTextBox}"

@@ -1398,7 +1398,15 @@ namespace RadiationShieldingDesign
             }
 
             Bullet($"Room category: {vm?.SelectedRoomCategory ?? "—"}");
-            Bullet($"Patients/week: {vm?.PatientsPerWeek.ToString("G") ?? "—"}");
+            if (vm?.IsSPECT == true)
+            {
+                foreach (var line in vm.SpectReportAssumptions())
+                    Bullet(line);
+            }
+            else
+            {
+                Bullet($"Patients/week: {vm?.PatientsPerWeek.ToString("G") ?? "—"}");
+            }
 
             // Add more later (CT/PET/workload mode) once you decide the exact phrasing
             Bullet("Results are based on user-entered geometry, distances, occupancy, and selected calculation methods.");
@@ -1900,11 +1908,6 @@ namespace RadiationShieldingDesign
             UpdateDistanceForBarrier(b);
         }
       
-        private void MenuSpectSuite_Click(object sender, RoutedEventArgs e)
-        {
-            new SpectSuiteWindow { Owner = this }.Show();
-        }
-
         private void MenuTips_Click(object sender, RoutedEventArgs e)
         {
             var w = new TipsWindow
