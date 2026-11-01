@@ -182,3 +182,60 @@ public class NuclearBarrierSolverTests
         Assert.True(Math.Abs(x - Math.Log(10)) < 1e-3);
     }
 }
+
+public class NuclearBarrierSolverShareTests
+{
+    private static readonly NuclideLibrary Lib = NuclideLibrary.Default;
+
+    private static PatientTimeline Study(string name, double mbq) => new()
+    {
+        Name = name,
+        Injections = { new("Tc-99m", mbq, 0) },
+        Segments = { new("Room", 0, 30) }
+    };
+
+    [Fact]
+    public void Shares_Sum_To_One_And_Follow_Workload()
+    {
+        // Same timeline and activity, 3:1 patient ratio → 75% / 25% of the dose.
+        var res = NuclearBarrierSolver.Solve(new NuclearBarrierRequest
+        {
+            Workloads = { new(Study("A", 555), 30), new(Study("B", 555), 10) },
+            Regions = { new("Room", 2.0) },
+            Material = "Lead"
+        }, Lib);
+
+        Assert.Equal(2, res.ByWorkload.Count);
+        Approx.Equal(1.0, res.ByWorkload.Sum(c => c.Fraction));
+        Assert.Equal("A", res.ByWorkload[0].Name);
+        Approx.Equal(0.75, res.ByWorkload[0].Fraction);
+        Approx.Equal(res.Week_mSv_AtRequired, res.ByWorkload.Sum(c => c.Shielded_week_mSv));
+        Assert.Contains(res.Trace, t => t.Key == "Share: A");
+    }
+
+    [Fact]
+    public void Glenville_Mix_Mpi_Dominates_Camera_Room()
+    {
+        // 6/18 mCi MPI ×60, MUGA 15 mCi ×5, PYP 15 mCi ×5; camera room wall at 2 m.
+        var mpi = SpectProtocols.Defaults(SpectProtocols.Tc1DayRestStress);
+        mpi.Activity1_MBq = 6 * 37; mpi.Activity2_MBq = 18 * 37;
+        var muga = SpectProtocols.Defaults(SpectProtocols.TcMuga); muga.Activity1_MBq = 15 * 37;
+        var pyp = SpectProtocols.Defaults(SpectProtocols.TcPyp); pyp.Activity1_MBq = 15 * 37;
+
+        var res = NuclearBarrierSolver.Solve(new NuclearBarrierRequest
+        {
+            Workloads =
+            {
+                new(SpectProtocols.Build(mpi), 60),
+                new(SpectProtocols.Build(muga), 5),
+                new(SpectProtocols.Build(pyp), 5)
+            },
+            Regions = { new(SpectRegions.Camera, 2.0) },
+            Material = "Lead"
+        }, Lib);
+
+        Assert.Equal(SpectProtocols.Tc1DayRestStress, res.ByWorkload[0].Name);
+        Assert.True(res.ByWorkload[0].Fraction > 0.8);
+        Approx.Equal(1.0, res.ByWorkload.Sum(c => c.Fraction));
+    }
+}

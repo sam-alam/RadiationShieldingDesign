@@ -38,6 +38,17 @@ public sealed class NuclideContribution
     public double Shielded_hour_mSv { get; init; }
 }
 
+/// <summary>How much of the barrier's weekly dose one protocol (study) contributes.</summary>
+public sealed class WorkloadContribution
+{
+    public string Name { get; init; } = "";
+    public double PatientsPerWeek { get; init; }
+    /// <summary>Weekly dose at the point from this protocol after all shielding (pre-existing + required), mSv/wk.</summary>
+    public double Shielded_week_mSv { get; init; }
+    /// <summary>Share of the barrier's total shielded weekly dose, 0..1.</summary>
+    public double Fraction { get; init; }
+}
+
 public sealed class NuclearBarrierResult
 {
     public string BarrierId { get; init; } = "";
@@ -50,6 +61,8 @@ public sealed class NuclearBarrierResult
     public double Week_mSv_AtRequired { get; init; }
     public double Hour_mSv_AtRequired { get; init; }
     public List<NuclideContribution> Contributions { get; init; } = new();
+    /// <summary>Per-protocol share of the shielded weekly dose, largest first.</summary>
+    public List<WorkloadContribution> ByWorkload { get; init; } = new();
     public List<string> Warnings { get; init; } = new();
     public List<KeyValuePair<string, string>> Trace { get; init; } = new();
 }
@@ -88,6 +101,8 @@ public static class NuclearBarrierSolver
         var weekly = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         var hourly = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         foreach (var id in nuclideIds) { weekly[id] = 0; hourly[id] = 0; }
+        // Same weekly dose, split by protocol: wlWeekly[workload index][nuclide]
+        var wlWeekly = perWorkload.Select(pw => nuclideIds.ToDictionary(id => id, id => 0.0, StringComparer.OrdinalIgnoreCase)).ToList();
 
         foreach (var rx in req.Regions)
         {
@@ -97,13 +112,16 @@ public static class NuclearBarrierSolver
             foreach (var id in nuclideIds)
             {
                 double wk_uSv = 0, peakHourPerPt_uSv = 0;
-                foreach (var (w, doses) in perWorkload)
+                for (int wi = 0; wi < perWorkload.Count; wi++)
                 {
+                    var (w, doses) = perWorkload[wi];
                     var d = doses.FirstOrDefault(x =>
                         string.Equals(x.Region, rx.Region, StringComparison.OrdinalIgnoreCase) &&
                         string.Equals(x.NuclideId, id, StringComparison.OrdinalIgnoreCase));
                     if (d == null) continue;
-                    wk_uSv += d.Dose_uSv_at1m * w.PatientsPerWeek;
+                    double part = d.Dose_uSv_at1m * w.PatientsPerWeek;
+                    wk_uSv += part;
+                    wlWeekly[wi][id] += part * inv_r2 * req.Occupancy / 1000.0;
                     peakHourPerPt_uSv = Math.Max(peakHourPerPt_uSv, d.PeakHourDose_uSv_at1m);
                 }
                 // Weekly: occupancy applies. Hourly: no occupancy factor (limit is on dose in any one hour at the point).
@@ -182,6 +200,23 @@ public static class NuclearBarrierSolver
         T("Thickness for hourly limit (mm)", req.P_hour_mSv > 0 ? Fmt(xHour) : "n/a");
         T("Governing", governing);
 
+        // ---- Per-protocol share of the weekly dose at the required thickness ----
+        var shieldedByWl = perWorkload.Select((p, wi) => (p.w,
+            dose: nuclideIds.Sum(id => wlWeekly[wi][id] * preTf[id] * newTf[id](xEval)))).ToList();
+        double totalShielded = shieldedByWl.Sum(x => x.dose);
+        var byWorkload = shieldedByWl
+            .Select(x => new WorkloadContribution
+            {
+                Name = x.w.Timeline.Name,
+                PatientsPerWeek = x.w.PatientsPerWeek,
+                Shielded_week_mSv = x.dose,
+                Fraction = totalShielded > 0 ? x.dose / totalShielded : 0
+            })
+            .OrderByDescending(c => c.Fraction)
+            .ToList();
+        foreach (var c in byWorkload)
+            T($"Share: {c.Name}", $"{c.Fraction:P0} of weekly dose ({c.Shielded_week_mSv:G3} mSv/wk shielded, {c.PatientsPerWeek:G4} pts/wk)");
+
         return new NuclearBarrierResult
         {
             BarrierId = req.BarrierId,
@@ -192,6 +227,7 @@ public static class NuclearBarrierSolver
             Week_mSv_AtRequired = WeekAt(xEval),
             Hour_mSv_AtRequired = HourAt(xEval),
             Contributions = contributions,
+            ByWorkload = byWorkload,
             Warnings = warnings.Distinct().ToList(),
             Trace = trace
         };
