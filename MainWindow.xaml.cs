@@ -40,6 +40,7 @@ namespace RadiationShieldingDesign
         private bool _scaleFirstPointSet = false;
         private const double HitTol = 12.0; // pixels
         private bool _dragTube = false;
+        private string? _dragSpectRegion;   // "Waiting" or "Stress" while dragging a SPECT suite marker
         private Point _lastPos;
         private bool _dragEnd1, _dragEnd2, _dragWhole;
         private bool _dragLabel;
@@ -160,6 +161,23 @@ namespace RadiationShieldingDesign
                 Mouse.Capture(DesignCanvas);
                 e.Handled = true;
                 return;
+            }
+
+            // --- SPECT suite region marker hit? (checked before the camera source; markers start on top of it) ---
+            if (VM.IsSpectSuite)
+            {
+                string? region =
+                    Distance(pos.X, pos.Y, VM.SpectStressX, VM.SpectStressY) < HitTol ? "Stress" :
+                    Distance(pos.X, pos.Y, VM.SpectWaitingX, VM.SpectWaitingY) < HitTol ? "Waiting" : null;
+                if (region != null)
+                {
+                    _dragLabel = false; _labelBarrier = null;
+                    _dragSpectRegion = region;
+                    DesignCanvas.Cursor = Cursors.SizeAll;
+                    Mouse.Capture(DesignCanvas);
+                    e.Handled = true;
+                    return;
+                }
             }
 
             // --- Tube hit? ---
@@ -286,11 +304,19 @@ namespace RadiationShieldingDesign
                 return;
             }
 
+            // SPECT suite region marker drag
+            if (_dragSpectRegion != null)
+            {
+                VM.MoveSpectMarker(_dragSpectRegion, pos.X, pos.Y);
+                return;
+            }
+
             // tube drag
             if (_dragTube)
             {
                 VM.TubeX = pos.X;
                 VM.TubeY = pos.Y;
+                if (VM.IsSpectSuite) VM.EnsureSpectMarkers();   // unplaced markers follow the camera source
 
                 foreach (var b in VM.Barriers)
                 {
@@ -348,7 +374,14 @@ namespace RadiationShieldingDesign
         {
             DesignCanvas.Cursor = Cursors.Arrow;
             _dragBg = false;
+            bool spectSourceMoved = _dragSpectRegion != null || (_dragTube && VM.IsSPECT);
+            _dragSpectRegion = null;
             _dragTube = _dragEnd1 = _dragEnd2 = _dragWhole = false;
+            if (spectSourceMoved)
+            {
+                Mouse.Capture(null);
+                VM.RecomputeAllSpect();   // every barrier's SPECT dose depends on the source positions
+            }
             _dragBarrier = null;
             var lb = _labelBarrier;
             _dragLabel = false;

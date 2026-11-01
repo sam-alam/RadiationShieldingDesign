@@ -450,6 +450,9 @@ public partial class MainViewModel : ObservableObject
 
     private void ResetToDefaults()
     {
+        // New design: SPECT suite region markers start on the camera source again.
+        SpectWaitingPlaced = false;
+        SpectStressPlaced = false;
 
         if (IsXrayRoom)
         {
@@ -3259,6 +3262,8 @@ public partial class MainViewModel : ObservableObject
             IsEditingBackground = false;
 
             LoadDefaultLayoutForRoom();
+            SpectWaitingPlaced = false;   // layout reloaded: region markers back on the camera source
+            SpectStressPlaced = false;
         ApplyCategoryExamPresets();
         ApplyNcrpPatientsIfLocked();
 

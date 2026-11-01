@@ -1629,10 +1629,36 @@
                                                 </Image.RenderTransform>
                                             </Image>
 
+                                            <!-- Centered on the source point (TubeX/TubeY is the point used in the calculations) -->
                                             <Ellipse Width="12" Height="12" Fill="Orange"
                                          Canvas.Left="{Binding TubeX}" Canvas.Top="{Binding TubeY}">
-                                                <Ellipse.ToolTip>Source (drag me)</Ellipse.ToolTip>
+                                                <Ellipse.RenderTransform>
+                                                    <TranslateTransform X="-6" Y="-6"/>
+                                                </Ellipse.RenderTransform>
+                                                <Ellipse.ToolTip>Source (drag me). In a SPECT suite: patient on the camera table.</Ellipse.ToolTip>
                                             </Ellipse>
+                                            <!-- SPECT suite: waiting (W) and stress (S) patient positions. Drawn centered on their point. -->
+                                            <Grid Panel.ZIndex="20" Width="22" Height="22" IsHitTestVisible="False"
+                                                  Canvas.Left="{Binding SpectWaitingX}" Canvas.Top="{Binding SpectWaitingY}"
+                                                  Visibility="{Binding IsSpectSuite, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <Grid.RenderTransform>
+                                                    <TranslateTransform X="-11" Y="-11"/>
+                                                </Grid.RenderTransform>
+                                                <Ellipse Fill="#1E88E5" Stroke="White" StrokeThickness="1.5"/>
+                                                <TextBlock Text="W" FontWeight="Bold" FontSize="12" Foreground="White"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Grid>
+                                            
+                                            <Grid Panel.ZIndex="20" Width="22" Height="22" IsHitTestVisible="False"
+                                                  Canvas.Left="{Binding SpectStressX}" Canvas.Top="{Binding SpectStressY}"
+                                                  Visibility="{Binding IsSpectSuite, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <Grid.RenderTransform>
+                                                    <TranslateTransform X="-11" Y="-11"/>
+                                                </Grid.RenderTransform>
+                                                <Ellipse Fill="#43A047" Stroke="White" StrokeThickness="1.5"/>
+                                                <TextBlock Text="S" FontWeight="Bold" FontSize="12" Foreground="White"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Grid>
 
                                             <!-- Barriers -->
                                             <ItemsControl Panel.ZIndex="10" ItemsSource="{Binding Barriers}">

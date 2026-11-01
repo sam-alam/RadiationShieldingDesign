@@ -97,6 +97,12 @@ public sealed class ProjectDto
     public string? SpectMaxPtsCameraText { get; set; }
     public string? SpectMaxPtsStressText { get; set; }
     public string? SpectHourlyLimitText { get; set; }
+    public double SpectWaitingX { get; set; }
+    public double SpectWaitingY { get; set; }
+    public double SpectStressX { get; set; }
+    public double SpectStressY { get; set; }
+    public bool SpectWaitingPlaced { get; set; }
+    public bool SpectStressPlaced { get; set; }
 
     // Survey
     public double SurveyRate_mR_per_h { get; set; }

@@ -164,6 +164,13 @@ public static class ProjectIO
             if (dto.SpectMaxPtsCameraText != null) vm.SpectMaxPtsCameraText = dto.SpectMaxPtsCameraText;
             if (dto.SpectMaxPtsStressText != null) vm.SpectMaxPtsStressText = dto.SpectMaxPtsStressText;
             if (dto.SpectHourlyLimitText != null) vm.SpectHourlyLimitText = dto.SpectHourlyLimitText;
+            vm.SpectWaitingX = dto.SpectWaitingX;
+            vm.SpectWaitingY = dto.SpectWaitingY;
+            vm.SpectStressX = dto.SpectStressX;
+            vm.SpectStressY = dto.SpectStressY;
+            vm.SpectWaitingPlaced = dto.SpectWaitingPlaced;
+            vm.SpectStressPlaced = dto.SpectStressPlaced;
+            vm.EnsureSpectMarkers();   // older files: markers start on the camera source
 
             // Survey
             vm.SurveyRate_mR_per_h = dto.SurveyRate_mR_per_h;
@@ -541,6 +548,12 @@ public static class ProjectIO
             SpectMaxPtsCameraText = vm.SpectMaxPtsCameraText,
             SpectMaxPtsStressText = vm.SpectMaxPtsStressText,
             SpectHourlyLimitText = vm.SpectHourlyLimitText,
+            SpectWaitingX = vm.SpectWaitingX,
+            SpectWaitingY = vm.SpectWaitingY,
+            SpectStressX = vm.SpectStressX,
+            SpectStressY = vm.SpectStressY,
+            SpectWaitingPlaced = vm.SpectWaitingPlaced,
+            SpectStressPlaced = vm.SpectStressPlaced,
 
             SurveyRate_mR_per_h = vm.SurveyRate_mR_per_h,
             SurveyOnTime_h_per_week = vm.SurveyOnTime_h_per_week,

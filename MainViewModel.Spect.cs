@@ -123,6 +123,7 @@ public partial class MainViewModel
     public void RecomputeAllSpect()
     {
         if (!IsSPECT || !HasActiveDesign || IsLoadingProject) return;
+        EnsureSpectMarkers();
         foreach (var b in Barriers) ComputeBarrier(b);
         ShowCachedTrace(SelectedBarrier);
     }
@@ -139,6 +140,47 @@ public partial class MainViewModel
             .Concat(b.SpectSeesStress ? new[] { SpectRegions.Stress } : Array.Empty<string>())
             .ToList()
     };
+
+    // ===== Per-region source positions (Cardiac SPECT Suite) =====
+    // The orange source marker is the patient on the camera table. In the suite, waiting and stress patients
+    // have their own markers so each region is calculated from where those patients actually are.
+    [ObservableProperty] private double spectWaitingX;
+    [ObservableProperty] private double spectWaitingY;
+    [ObservableProperty] private double spectStressX;
+    [ObservableProperty] private double spectStressY;
+    /// <summary>False until the user drags the marker; until then it sits on the camera source (conservative).</summary>
+    [ObservableProperty] private bool spectWaitingPlaced;
+    [ObservableProperty] private bool spectStressPlaced;
+
+    /// <summary>Put unplaced region markers on the camera source so they're visible and conservative.</summary>
+    public void EnsureSpectMarkers()
+    {
+        if (!SpectWaitingPlaced) { SpectWaitingX = TubeX; SpectWaitingY = TubeY; }
+        if (!SpectStressPlaced) { SpectStressX = TubeX; SpectStressY = TubeY; }
+    }
+
+    /// <summary>Called by the canvas while a region marker is dragged.</summary>
+    public void MoveSpectMarker(string region, double x, double y)
+    {
+        if (region == SpectRegions.Waiting) { SpectWaitingX = x; SpectWaitingY = y; SpectWaitingPlaced = true; }
+        else if (region == SpectRegions.Stress) { SpectStressX = x; SpectStressY = y; SpectStressPlaced = true; }
+        MarkDirty();
+    }
+
+    /// <summary>
+    /// Distance (m, including the barrier's usual offset beyond the wall) from a region's source to the barrier's
+    /// calculation point. Floors/ceilings and single-room categories use the barrier's normal distance.
+    /// </summary>
+    private double SpectRegionDistance(BarrierItemViewModel b, string region)
+    {
+        double normal = Math.Max(1e-6, b.EffectiveDistance_m);
+        if (!IsSpectSuite || !b.IsDrawable || region == SpectRegions.Camera) return normal;
+
+        double x = region == SpectRegions.Waiting ? SpectWaitingX : region == SpectRegions.Stress ? SpectStressX : TubeX;
+        double y = region == SpectRegions.Waiting ? SpectWaitingY : region == SpectRegions.Stress ? SpectStressY : TubeY;
+        double raw = DistancePointToSegment(x, y, b.X1, b.Y1, b.X2, b.Y2) * CmPerPixel / 100.0;
+        return Math.Max(1e-6, raw + b.ExtraOffset_m);
+    }
 
     // ===== Compute =====
     private void ComputeSpectBarrier(BarrierItemViewModel b)
@@ -160,8 +202,9 @@ public partial class MainViewModel
         };
         foreach (var s in studies)
             req.Workloads.Add(new ProtocolWorkload(SpectProtocols.Build(s.ToStudy()), s.PatientsPerWeek));
+        var regionDist = regions.ToDictionary(reg => reg, reg => SpectRegionDistance(b, reg));
         foreach (var reg in regions)
-            req.Regions.Add(new RegionExposure(reg, r, SpectMaxPts(reg)));
+            req.Regions.Add(new RegionExposure(reg, regionDist[reg], SpectMaxPts(reg)));
         foreach (var pl in b.PreexistingLayers)
         {
             var m = MapSpectMaterial(pl.MaterialName);
@@ -185,7 +228,19 @@ public partial class MainViewModel
         // ---- Trace (same panel/report as other modalities) ----
         TraceItems.Add(new("Modality", "Nuclear medicine (SPECT), patient as source"));
         TraceItems.Add(new("Source regions seen", regions.Count > 0 ? string.Join(", ", regions) : "none"));
-        TraceItems.Add(new("Distance used r (m)", r.ToString("G4", CultureInfo.CurrentCulture)));
+        if (IsSpectSuite && b.IsDrawable)
+        {
+            foreach (var reg in regions)
+                TraceItems.Add(new($"Distance from {reg} source (m)", regionDist[reg].ToString("G4", CultureInfo.CurrentCulture)));
+            if (regions.Contains(SpectRegions.Waiting) && !SpectWaitingPlaced)
+                TraceItems.Add(new("⚠ Warning", "Waiting source marker has not been placed; it sits on the camera source (conservative). Drag the blue W marker to where injected patients wait."));
+            if (regions.Contains(SpectRegions.Stress) && !SpectStressPlaced)
+                TraceItems.Add(new("⚠ Warning", "Stress source marker has not been placed; it sits on the camera source (conservative). Drag the green S marker to the stress/injection position."));
+        }
+        else
+        {
+            TraceItems.Add(new("Distance used r (m)", r.ToString("G4", CultureInfo.CurrentCulture)));
+        }
         if (studies.Count == 0)
             TraceItems.Add(new("Studies", "none enabled (enter patients/week in SPECT Parameters)"));
         foreach (var s in studies)
@@ -258,6 +313,8 @@ public partial class MainViewModel
         if (!IsSPECT) yield break;
         foreach (var s in SpectStudies.Where(x => x.IsEnabled && x.PatientsPerWeek > 0))
             yield return $"{s.Protocol}: {s.Describe()}.";
+        if (IsSpectSuite)
+            yield return "Camera, waiting and stress patients are modeled at their own positions as marked on the layout; each barrier's distance is measured from each source position.";
         yield return $"Max patients present at once: waiting {SpectMaxPtsWaitingText}, camera {SpectMaxPtsCameraText}, stress {SpectMaxPtsStressText}.";
         yield return $"Uncontrolled areas checked against {SpectHourlyLimitText} mSv in any one hour in addition to the weekly design goal.";
         yield return "Dose-rate constants are for a point source in air (no patient self-attenuation), which is conservative.";
