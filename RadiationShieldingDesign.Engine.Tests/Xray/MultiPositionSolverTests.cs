@@ -1,3 +1,4 @@
+using System.IO;
 using RadiationShieldingDesign.Engine.Xray;
 
 namespace RadiationShieldingDesign.Engine.Tests.Xray;
