@@ -453,6 +453,11 @@ public partial class MainViewModel : ObservableObject
         // New design: SPECT suite region markers start on the camera source again.
         SpectWaitingPlaced = false;
         SpectStressPlaced = false;
+        // New design: single tube position until the user opts in to multi-position.
+        MultiPositionEnabled = false;
+        ChestPlaced = false;
+        MpTablePatientsText = MpChestPatientsText = MpFluoroPatientsText = "";
+        MpTableWText = MpChestWText = MpFluoroWText = "";
 
         if (IsXrayRoom)
         {
@@ -1036,6 +1041,13 @@ public partial class MainViewModel : ObservableObject
             return 0.0;
         }
 
+        // Multi-position x-ray: each tube position has its own K; there is no single K1.
+        if (IsMultiPositionActive)
+        {
+            b.KSource = "Multi-position";
+            return 0.0;
+        }
+
         // ───────────────────────────────────────────────────────────────
         // 1) True manual override always wins (only when user actually typed K1)
         // ───────────────────────────────────────────────────────────────
@@ -1358,7 +1370,11 @@ public partial class MainViewModel : ObservableObject
         or nameof(BarrierItemViewModel.PetRegion)
         or nameof(BarrierItemViewModel.SpectSeesWaiting)
         or nameof(BarrierItemViewModel.SpectSeesCamera)
-        or nameof(BarrierItemViewModel.SpectSeesStress))
+        or nameof(BarrierItemViewModel.SpectSeesStress)
+        or nameof(BarrierItemViewModel.MpTableRole)
+        or nameof(BarrierItemViewModel.MpChestRole)
+        or nameof(BarrierItemViewModel.MpFluoroRole)
+        or nameof(BarrierItemViewModel.Kind))
         {
             ComputeBarrier(b);
         }
@@ -2428,6 +2444,9 @@ public partial class MainViewModel : ObservableObject
             SpectSeesWaiting = src.SpectSeesWaiting,
             SpectSeesCamera = src.SpectSeesCamera,
             SpectSeesStress = src.SpectSeesStress,
+            MpTableRole = src.MpTableRole,
+            MpChestRole = src.MpChestRole,
+            MpFluoroRole = src.MpFluoroRole,
         };
 
         // Copy saved distance behavior
@@ -2883,6 +2902,12 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
+        if (IsMultiPositionActive)
+        {
+            ComputeMultiPositionBarrier(b);
+            return;
+        }
+
         if (IsPET)
         {
             // Recompute K1 pieces for trace clarity
@@ -3264,6 +3289,9 @@ public partial class MainViewModel : ObservableObject
             LoadDefaultLayoutForRoom();
             SpectWaitingPlaced = false;   // layout reloaded: region markers back on the camera source
             SpectStressPlaced = false;
+            ChestPlaced = false;
+            RaiseMultiPositionState();
+            if (!IsMultiPositionAvailable) MultiPositionEnabled = false;
         ApplyCategoryExamPresets();
         ApplyNcrpPatientsIfLocked();
 
@@ -3559,6 +3587,7 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(IsSPECT));
         OnPropertyChanged(nameof(IsSpectSuite));
         OnPropertyChanged(nameof(IsNuclear));
+        RaiseMultiPositionState();
         OnPropertyChanged(nameof(MaterialNamesForUi));
         OnPropertyChanged(nameof(PreexistingMaterialNamesForUi));
         OnPropertyChanged(nameof(IsXrayRoom));

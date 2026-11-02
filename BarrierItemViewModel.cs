@@ -158,6 +158,11 @@ public partial class BarrierItemViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool spectSeesCamera = true;
     [ObservableProperty] private bool spectSeesStress = true;
 
+    // Multi-position x-ray: role of each tube position for this barrier ("Auto", "Primary", "Secondary", "Off")
+    [ObservableProperty] private string mpTableRole = "Auto";
+    [ObservableProperty] private string mpChestRole = "Auto";
+    [ObservableProperty] private string mpFluoroRole = "Auto";
+
   
 
     private ThicknessRoundingRule _thicknessRoundingRule = ThicknessRoundingRule.Auto;

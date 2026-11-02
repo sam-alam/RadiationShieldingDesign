@@ -1123,6 +1123,75 @@
                                     </StackPanel>
                                 </materialDesign:Card>
 
+                                <!-- CARD: Tube positions (multi-position x-ray; rad room and R&F only) -->
+                                <materialDesign:Card Margin="0,0,0,10" UniformCornerRadius="10"
+                                         Visibility="{Binding IsMultiPositionAvailable, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <StackPanel Margin="14,12">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                            <materialDesign:PackIcon Kind="CrosshairsGps" Width="18" Height="18"
+                                                         VerticalAlignment="Center" Margin="0,0,8,0"
+                                                         Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                            <TextBlock Text="Tube Positions"
+                                           Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                           VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <CheckBox Content="Separate tube positions (NCRP 147 multi-position)"
+                                                  IsChecked="{Binding MultiPositionEnabled}" Margin="0,4,0,6"/>
+                                        <StackPanel Visibility="{Binding IsMultiPositionActive, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <TextBlock TextWrapping="Wrap" Opacity="0.6" Margin="0,0,0,10"
+                                                       Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                                       Text="Orange marker = table position. Purple C = chest stand (patient at the receptor); drag it into place. Every barrier gets secondary from every position, and primary from positions aimed at it (set per barrier)."/>
+                                            <DockPanel Margin="0,0,0,6"
+                                                       Visibility="{Binding IsRfRoom, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                         HorizontalContentAlignment="Center"
+                                                         Text="{Binding MpFluoroPatientsText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBlock Text="{Binding MpFluoroLabel, StringFormat={}{0}: patients / week}" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                            </DockPanel>
+                                            <DockPanel Margin="0,0,0,6">
+                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                         HorizontalContentAlignment="Center"
+                                                         Text="{Binding MpTablePatientsText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBlock Text="{Binding MpTableLabel, StringFormat={}{0}: patients / week}" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                            </DockPanel>
+                                            <DockPanel Margin="0,0,0,6">
+                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                         HorizontalContentAlignment="Center"
+                                                         Text="{Binding MpChestPatientsText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBlock Text="{Binding MpChestLabel, StringFormat={}{0}: patients / week}" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                            </DockPanel>
+                                            <DockPanel Margin="0,0,0,6">
+                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                         HorizontalContentAlignment="Center"
+                                                         Text="{Binding MpChestSidText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBlock Text="Chest SID, focal spot to receptor (m)" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                            </DockPanel>
+                                            <TextBlock Text="WORKLOAD PER PATIENT (mA·min, blank = NCRP 147)"
+                                                       Style="{StaticResource RsdSectionOverlineTextBlock}"
+                                                       Opacity="0.6" Margin="0,6,0,8"/>
+                                            <DockPanel Margin="0,0,0,6"
+                                                       Visibility="{Binding IsRfRoom, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                         HorizontalContentAlignment="Center"
+                                                         Text="{Binding MpFluoroWText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBlock Text="Fluoro" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                            </DockPanel>
+                                            <DockPanel Margin="0,0,0,6">
+                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                         HorizontalContentAlignment="Center"
+                                                         Text="{Binding MpTableWText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBlock Text="{Binding MpTableLabel}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                            </DockPanel>
+                                            <DockPanel Margin="0,0,0,6">
+                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                         HorizontalContentAlignment="Center"
+                                                         Text="{Binding MpChestWText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBlock Text="{Binding MpChestLabel}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                            </DockPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </materialDesign:Card>
+
                                 <!-- Divider -->
                                 <Rectangle Height="1" Fill="{DynamicResource MaterialDesignDivider}" Margin="0,2,0,10"/>
 
@@ -1209,6 +1278,39 @@
                                                     <CheckBox Content="Camera" IsChecked="{Binding SpectSeesCamera}" Margin="0,0,16,0"/>
                                                     <CheckBox Content="Stress" IsChecked="{Binding SpectSeesStress}"/>
                                                 </WrapPanel>
+                                            </StackPanel>
+
+                                            <!-- Multi-position x-ray: role of each tube position for this barrier -->
+                                            <StackPanel Margin="0,0,0,10"
+                                                        Visibility="{Binding DataContext.IsMultiPositionActive, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <TextBlock Text="TUBE POSITION ROLES"
+                                                           Style="{StaticResource RsdSectionOverlineTextBlock}"
+                                                           Opacity="0.6" Margin="0,0,0,6"/>
+                                                <DockPanel Margin="0,0,0,6"
+                                                           Visibility="{Binding DataContext.IsRfRoom, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <ComboBox DockPanel.Dock="Right" Width="120" Style="{StaticResource RsdComboBox}"
+                                                              ItemsSource="{Binding DataContext.MpRoleOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                              SelectedItem="{Binding MpFluoroRole}"/>
+                                                    <TextBlock Text="{Binding DataContext.MpFluoroLabel, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                               VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                                </DockPanel>
+                                                <DockPanel Margin="0,0,0,6">
+                                                    <ComboBox DockPanel.Dock="Right" Width="120" Style="{StaticResource RsdComboBox}"
+                                                              ItemsSource="{Binding DataContext.MpRoleOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                              SelectedItem="{Binding MpTableRole}"/>
+                                                    <TextBlock Text="{Binding DataContext.MpTableLabel, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                               VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                                </DockPanel>
+                                                <DockPanel Margin="0,0,0,6">
+                                                    <ComboBox DockPanel.Dock="Right" Width="120" Style="{StaticResource RsdComboBox}"
+                                                              ItemsSource="{Binding DataContext.MpRoleOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                              SelectedItem="{Binding MpChestRole}"/>
+                                                    <TextBlock Text="{Binding DataContext.MpChestLabel, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                               VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                                </DockPanel>
+                                                <TextBlock TextWrapping="Wrap" Opacity="0.6"
+                                                           Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                                           Text="Auto: chest bucky wall = primary from the chest stand; other primary barriers = primary from the table; everything else secondary. Primary uses this barrier's use factor U and pre-shield; that position's scatter toward the wall gets the same receptor credit."/>
                                             </StackPanel>
 
                                             <TextBox Style="{StaticResource RsdTextBox}"
@@ -1345,7 +1447,7 @@
 
                                     <!-- CARD: Air-Kerma K (hidden for SPECT: dose is per nuclide, no single K1) -->
                                     <materialDesign:Card Margin="0,0,0,10" UniformCornerRadius="10"
-                                         Visibility="{Binding DataContext.IsSPECT, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                                         Visibility="{Binding DataContext.ShowAirKermaCard, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}">
                                         <StackPanel Margin="14,12">
                                             <TextBlock Text="UNSHIELDED AIR-KERMA K (mGy/pt)"
                                            Style="{StaticResource RsdSectionOverlineTextBlock}"
@@ -1648,6 +1750,17 @@
                                                 </Ellipse.RenderTransform>
                                                 <Ellipse.ToolTip>Source (drag me). In a SPECT suite: patient on the camera table.</Ellipse.ToolTip>
                                             </Ellipse>
+                                            <!-- Multi-position x-ray: chest-stand marker (C) -->
+                                            <Grid Panel.ZIndex="20" Width="22" Height="22" IsHitTestVisible="False"
+                                                  Canvas.Left="{Binding ChestX}" Canvas.Top="{Binding ChestY}"
+                                                  Visibility="{Binding IsMultiPositionActive, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <Grid.RenderTransform>
+                                                    <TranslateTransform X="-11" Y="-11"/>
+                                                </Grid.RenderTransform>
+                                                <Ellipse Fill="#8E24AA" Stroke="White" StrokeThickness="1.5"/>
+                                                <TextBlock Text="C" FontWeight="Bold" FontSize="12" Foreground="White"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Grid>
                                             <!-- SPECT suite: waiting (W) and stress (S) patient positions. Drawn centered on their point. -->
                                             <Grid Panel.ZIndex="20" Width="22" Height="22" IsHitTestVisible="False"
                                                   Canvas.Left="{Binding SpectWaitingX}" Canvas.Top="{Binding SpectWaitingY}"

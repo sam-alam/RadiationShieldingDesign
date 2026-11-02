@@ -172,6 +172,19 @@ public static class ProjectIO
             vm.SpectStressPlaced = dto.SpectStressPlaced;
             vm.EnsureSpectMarkers();   // older files: markers start on the camera source
 
+            // Multi-position x-ray
+            vm.MpTablePatientsText = dto.MpTablePatientsText ?? "";
+            vm.MpChestPatientsText = dto.MpChestPatientsText ?? "";
+            vm.MpFluoroPatientsText = dto.MpFluoroPatientsText ?? "";
+            vm.MpTableWText = dto.MpTableWText ?? "";
+            vm.MpChestWText = dto.MpChestWText ?? "";
+            vm.MpFluoroWText = dto.MpFluoroWText ?? "";
+            vm.MpChestSidText = dto.MpChestSidText ?? "1.83";
+            vm.ChestX = dto.ChestX;
+            vm.ChestY = dto.ChestY;
+            vm.ChestPlaced = dto.ChestPlaced;
+            vm.MultiPositionEnabled = dto.MultiPositionEnabled;
+
             // Survey
             vm.SurveyRate_mR_per_h = dto.SurveyRate_mR_per_h;
             vm.SurveyOnTime_h_per_week = dto.SurveyOnTime_h_per_week;
@@ -451,6 +464,9 @@ public static class ProjectIO
             SpectSeesWaiting = d.SpectSeesWaiting,
             SpectSeesCamera = d.SpectSeesCamera,
             SpectSeesStress = d.SpectSeesStress,
+            MpTableRole = d.MpTableRole ?? "Auto",
+            MpChestRole = d.MpChestRole ?? "Auto",
+            MpFluoroRole = d.MpFluoroRole ?? "Auto",
 
             LinkedSecondaryId = d.LinkedSecondaryId,
             TwinSecondaryId = d.TwinSecondaryId,
@@ -555,6 +571,18 @@ public static class ProjectIO
             SpectWaitingPlaced = vm.SpectWaitingPlaced,
             SpectStressPlaced = vm.SpectStressPlaced,
 
+            MultiPositionEnabled = vm.MultiPositionEnabled,
+            MpTablePatientsText = vm.MpTablePatientsText,
+            MpChestPatientsText = vm.MpChestPatientsText,
+            MpFluoroPatientsText = vm.MpFluoroPatientsText,
+            MpTableWText = vm.MpTableWText,
+            MpChestWText = vm.MpChestWText,
+            MpFluoroWText = vm.MpFluoroWText,
+            MpChestSidText = vm.MpChestSidText,
+            ChestX = vm.ChestX,
+            ChestY = vm.ChestY,
+            ChestPlaced = vm.ChestPlaced,
+
             SurveyRate_mR_per_h = vm.SurveyRate_mR_per_h,
             SurveyOnTime_h_per_week = vm.SurveyOnTime_h_per_week,
             SurveyPerExam_mR = vm.SurveyPerExam_mR,
@@ -641,6 +669,9 @@ public static class ProjectIO
                 SpectSeesWaiting = b.SpectSeesWaiting,
                 SpectSeesCamera = b.SpectSeesCamera,
                 SpectSeesStress = b.SpectSeesStress,
+                MpTableRole = b.MpTableRole,
+                MpChestRole = b.MpChestRole,
+                MpFluoroRole = b.MpFluoroRole,
 
                 LinkedSecondaryId = b.LinkedSecondaryId,
                 TwinSecondaryId = b.TwinSecondaryId,

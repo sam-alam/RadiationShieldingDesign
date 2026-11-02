@@ -104,6 +104,19 @@ public sealed class ProjectDto
     public bool SpectWaitingPlaced { get; set; }
     public bool SpectStressPlaced { get; set; }
 
+    // Multi-position x-ray (absent in older files → off)
+    public bool MultiPositionEnabled { get; set; }
+    public string? MpTablePatientsText { get; set; }
+    public string? MpChestPatientsText { get; set; }
+    public string? MpFluoroPatientsText { get; set; }
+    public string? MpTableWText { get; set; }
+    public string? MpChestWText { get; set; }
+    public string? MpFluoroWText { get; set; }
+    public string? MpChestSidText { get; set; }
+    public double ChestX { get; set; }
+    public double ChestY { get; set; }
+    public bool ChestPlaced { get; set; }
+
     // Survey
     public double SurveyRate_mR_per_h { get; set; }
     public double SurveyOnTime_h_per_week { get; set; }
@@ -176,6 +189,11 @@ public sealed class BarrierDto
     public bool SpectSeesWaiting { get; set; } = true;
     public bool SpectSeesCamera { get; set; } = true;
     public bool SpectSeesStress { get; set; } = true;
+
+    // Multi-position x-ray roles
+    public string? MpTableRole { get; set; }
+    public string? MpChestRole { get; set; }
+    public string? MpFluoroRole { get; set; }
 
     public Guid? LinkedSecondaryId { get; set; }
     public Guid? TwinSecondaryId { get; set; }

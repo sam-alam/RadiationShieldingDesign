@@ -41,6 +41,7 @@ namespace RadiationShieldingDesign
         private const double HitTol = 12.0; // pixels
         private bool _dragTube = false;
         private string? _dragSpectRegion;   // "Waiting" or "Stress" while dragging a SPECT suite marker
+        private bool _dragChest;            // dragging the chest-stand marker (multi-position x-ray)
         private Point _lastPos;
         private bool _dragEnd1, _dragEnd2, _dragWhole;
         private bool _dragLabel;
@@ -182,6 +183,17 @@ namespace RadiationShieldingDesign
                 }
             }
 
+            // --- Chest-stand marker hit? (multi-position x-ray) ---
+            if (VM.IsMultiPositionActive && Distance(pos.X, pos.Y, VM.ChestX, VM.ChestY) < HitTol)
+            {
+                _dragLabel = false; _labelBarrier = null;
+                _dragChest = true;
+                DesignCanvas.Cursor = Cursors.SizeAll;
+                Mouse.Capture(DesignCanvas);
+                e.Handled = true;
+                return;
+            }
+
             // --- Tube hit? ---
             if (Math.Abs(pos.X - VM.TubeX) < HitTol && Math.Abs(pos.Y - VM.TubeY) < HitTol)
             {
@@ -306,6 +318,13 @@ namespace RadiationShieldingDesign
                 return;
             }
 
+            // chest-stand marker drag
+            if (_dragChest)
+            {
+                VM.MoveChestMarker(pos.X, pos.Y);
+                return;
+            }
+
             // SPECT suite region marker drag
             if (_dragSpectRegion != null)
             {
@@ -377,12 +396,19 @@ namespace RadiationShieldingDesign
             DesignCanvas.Cursor = Cursors.Arrow;
             _dragBg = false;
             bool spectSourceMoved = _dragSpectRegion != null || (_dragTube && VM.IsSPECT);
+            bool xraySourceMoved = _dragChest || (_dragTube && VM.IsMultiPositionActive);
             _dragSpectRegion = null;
+            _dragChest = false;
             _dragTube = _dragEnd1 = _dragEnd2 = _dragWhole = false;
             if (spectSourceMoved)
             {
                 Mouse.Capture(null);
                 VM.RecomputeAllSpect();   // every barrier's SPECT dose depends on the source positions
+            }
+            if (xraySourceMoved)
+            {
+                Mouse.Capture(null);
+                VM.RecomputeAllAndShow(); // every barrier sees every tube position
             }
             _dragBarrier = null;
             var lb = _labelBarrier;
@@ -1501,6 +1527,11 @@ namespace RadiationShieldingDesign
             if (vm?.IsSPECT == true)
             {
                 foreach (var line in vm.SpectReportAssumptions())
+                    Bullet(line);
+            }
+            else if (vm?.IsMultiPositionActive == true)
+            {
+                foreach (var line in vm.MultiPositionReportAssumptions())
                     Bullet(line);
             }
             else
