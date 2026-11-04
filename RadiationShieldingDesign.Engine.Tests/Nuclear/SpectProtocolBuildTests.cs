@@ -85,4 +85,17 @@ public class SpectProtocolBuildTests
             Approx.Equal(k.Dose_uSv_at1m * 0.6, g.Dose_uSv_at1m);
         }
     }
+
+    [Fact]
+    public void Two_Day_Rest_Visit_Never_Uses_The_Stress_Room()
+    {
+        var rest = SpectProtocols.Create(SpectProtocols.Tc2DayRestVisit);
+        Assert.Single(rest.Injections);
+        Assert.DoesNotContain(rest.Segments, s => s.Region == SpectRegions.Stress);
+        Assert.Contains(rest.Segments, s => s.Region == SpectRegions.Waiting);
+        Assert.Contains(rest.Segments, s => s.Region == SpectRegions.Camera);
+
+        var stress = SpectProtocols.Create(SpectProtocols.Tc2DayPerVisit);
+        Assert.Contains(stress.Segments, s => s.Region == SpectRegions.Stress);
+    }
 }

@@ -5,7 +5,8 @@ namespace RadiationShieldingDesign.Engine.Nuclear;
 /// into a <see cref="PatientTimeline"/>. Which fields matter depends on <see cref="Protocol"/>:
 /// <list type="bullet">
 /// <item>1-day rest/stress: Activity1 = rest Tc-99m, Activity2 = stress Tc-99m; Wait, Scan, Gap (rest scan end → stress start), Stress, PostStressWait.</item>
-/// <item>2-day (one visit): Activity1 = Tc-99m; Stress, PostStressWait, Scan.</item>
+/// <item>2-day stress visit: Activity1 = Tc-99m; Stress, PostStressWait, Scan.</item>
+/// <item>2-day rest visit: Activity1 = Tc-99m; Wait, Scan (no stress room).</item>
 /// <item>Dual isotope: Activity1 = rest Tl-201, Activity2 = stress Tc-99m; Wait, Scan, Gap, Stress, PostStressWait.</item>
 /// <item>PYP / MUGA: Activity1 = Tc-99m; Wait (uptake before scan), Scan.</item>
 /// <item>I-123 MIBG: Activity1 = I-123; Wait = early image start, Gap = late image start, Scan (each image).</item>
@@ -32,7 +33,10 @@ public sealed class SpectStudy
 public static class SpectProtocols
 {
     public const string Tc1DayRestStress = "Tc-99m MPI, 1-day rest/stress";
+    /// <summary>Stress visit of a 2-day protocol (string kept for saved-project compatibility).</summary>
     public const string Tc2DayPerVisit = "Tc-99m MPI, 2-day (one visit)";
+    /// <summary>Rest visit of a 2-day protocol: inject, wait, scan — no stress room, no second injection.</summary>
+    public const string Tc2DayRestVisit = "Tc-99m MPI, 2-day (rest visit)";
     public const string DualIsotope = "Dual isotope (Tl-201 rest + Tc-99m stress)";
     public const string TcPyp = "Tc-99m PYP (cardiac amyloid)";
     public const string TcMuga = "Tc-99m MUGA";
@@ -40,7 +44,7 @@ public static class SpectProtocols
 
     public static IReadOnlyList<string> All { get; } = new[]
     {
-        Tc1DayRestStress, Tc2DayPerVisit, DualIsotope, TcPyp, TcMuga, I123Mibg
+        Tc1DayRestStress, Tc2DayPerVisit, Tc2DayRestVisit, DualIsotope, TcPyp, TcMuga, I123Mibg
     };
 
     /// <summary>Nuclide of Activity1 and Activity2 for each protocol (Activity2 null if unused).</summary>
@@ -48,6 +52,7 @@ public static class SpectProtocols
     {
         Tc1DayRestStress => ("Tc-99m", "Tc-99m"),
         Tc2DayPerVisit => ("Tc-99m", null),
+        Tc2DayRestVisit => ("Tc-99m", null),
         DualIsotope => ("Tl-201", "Tc-99m"),
         TcPyp => ("Tc-99m", null),
         TcMuga => ("Tc-99m", null),
@@ -66,6 +71,10 @@ public static class SpectProtocols
         {
             Protocol = protocol, Activity1_MBq = 1110,
             Scan_min = 20, Stress_min = 15, PostStressWait_min = 30
+        },
+        Tc2DayRestVisit => new SpectStudy
+        {
+            Protocol = protocol, Activity1_MBq = 1110, Wait_min = 45, Scan_min = 20
         },
         DualIsotope => new SpectStudy
         {
@@ -114,7 +123,13 @@ public static class SpectProtocols
                 Seg(SpectRegions.Stress, 0, St);
                 Seg(SpectRegions.Waiting, St, St + P);
                 Seg(SpectRegions.Camera, St + P, St + P + S);
-                tl.Notes.Add("One visit of a 2-day protocol (stress visit). Count each visit as one patient in patients/week.");
+                tl.Notes.Add("STRESS visit of a 2-day protocol. Enter the rest visits under '" + Tc2DayRestVisit + "' so the stress room is not charged for them.");
+                break;
+            case Tc2DayRestVisit:
+                tl.Injections.Add(new Injection(nuc1, s.Activity1_MBq, 0));
+                Seg(SpectRegions.Waiting, 0, W);
+                Seg(SpectRegions.Camera, W, W + S);
+                tl.Notes.Add("REST visit of a 2-day protocol: injection, waiting, camera; no stress room.");
                 break;
             case TcPyp:
             case TcMuga:

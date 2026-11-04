@@ -184,6 +184,9 @@ public static class ProjectIO
             vm.ChestY = dto.ChestY;
             vm.ChestPlaced = dto.ChestPlaced;
             vm.MultiPositionEnabled = dto.MultiPositionEnabled;
+            if (dto.SpectPtsPerHourWaitingText != null) vm.SpectPtsPerHourWaitingText = dto.SpectPtsPerHourWaitingText;
+            if (dto.SpectPtsPerHourCameraText != null) vm.SpectPtsPerHourCameraText = dto.SpectPtsPerHourCameraText;
+            if (dto.SpectPtsPerHourStressText != null) vm.SpectPtsPerHourStressText = dto.SpectPtsPerHourStressText;
 
             // Survey
             vm.SurveyRate_mR_per_h = dto.SurveyRate_mR_per_h;
@@ -582,6 +585,9 @@ public static class ProjectIO
             ChestX = vm.ChestX,
             ChestY = vm.ChestY,
             ChestPlaced = vm.ChestPlaced,
+            SpectPtsPerHourWaitingText = vm.SpectPtsPerHourWaitingText,
+            SpectPtsPerHourCameraText = vm.SpectPtsPerHourCameraText,
+            SpectPtsPerHourStressText = vm.SpectPtsPerHourStressText,
 
             SurveyRate_mR_per_h = vm.SurveyRate_mR_per_h,
             SurveyOnTime_h_per_week = vm.SurveyOnTime_h_per_week,

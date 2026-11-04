@@ -96,21 +96,64 @@ public partial class MainViewModel
     [ObservableProperty] private string spectMaxPtsCameraText = "1";
     [ObservableProperty] private string spectMaxPtsStressText = "1";
 
+    /// <summary>Most DIFFERENT patients that can pass through each region in any one clock hour (turnover). Blank = use at-once count.</summary>
+    [ObservableProperty] private string spectPtsPerHourWaitingText = "";
+    [ObservableProperty] private string spectPtsPerHourCameraText = "";
+    [ObservableProperty] private string spectPtsPerHourStressText = "";
+
     /// <summary>Public dose limit in any one hour (mSv), applied to uncontrolled barriers.</summary>
     [ObservableProperty] private string spectHourlyLimitText = "0.02";
 
     partial void OnSpectMaxPtsWaitingTextChanged(string value) => OnSpectInputChanged();
     partial void OnSpectMaxPtsCameraTextChanged(string value) => OnSpectInputChanged();
     partial void OnSpectMaxPtsStressTextChanged(string value) => OnSpectInputChanged();
+    partial void OnSpectPtsPerHourWaitingTextChanged(string value) => OnSpectInputChanged();
+    partial void OnSpectPtsPerHourCameraTextChanged(string value) => OnSpectInputChanged();
+    partial void OnSpectPtsPerHourStressTextChanged(string value) => OnSpectInputChanged();
     partial void OnSpectHourlyLimitTextChanged(string value) => OnSpectInputChanged();
 
-    private double SpectMaxPts(string region) => Math.Max(1.0, region switch
+    /// <summary>Strict numeric parse: NaN for anything that is not a number (blank included). Callers decide what blank means.</summary>
+    private static double ParseStrict(string? s)
     {
-        SpectRegions.Waiting => ParseOrZero(SpectMaxPtsWaitingText),
-        SpectRegions.Camera => ParseOrZero(SpectMaxPtsCameraText),
-        SpectRegions.Stress => ParseOrZero(SpectMaxPtsStressText),
-        _ => 1.0
-    });
+        if (string.IsNullOrWhiteSpace(s)) return double.NaN;
+        var t = s.Trim();
+        if (double.TryParse(t, NumberStyles.Float, CultureInfo.CurrentCulture, out var v)) return v;
+        if (double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture, out v)) return v;
+        return double.NaN;
+    }
+
+    private string SpectMaxPtsText(string region) => region switch
+    {
+        SpectRegions.Waiting => SpectMaxPtsWaitingText,
+        SpectRegions.Camera => SpectMaxPtsCameraText,
+        SpectRegions.Stress => SpectMaxPtsStressText,
+        _ => "1"
+    };
+
+    private string SpectPtsPerHourText(string region) => region switch
+    {
+        SpectRegions.Waiting => SpectPtsPerHourWaitingText,
+        SpectRegions.Camera => SpectPtsPerHourCameraText,
+        SpectRegions.Stress => SpectPtsPerHourStressText,
+        _ => ""
+    };
+
+    /// <summary>Max patients at once; NaN if the text is not a valid number ≥ 1 (validated before solving).</summary>
+    private double SpectMaxPts(string region)
+    {
+        double v = ParseStrict(SpectMaxPtsText(region));
+        return v >= 1 ? v : double.NaN;
+    }
+
+    /// <summary>Different patients per hour; 0 when blank (not specified), NaN if invalid.</summary>
+    private double SpectPtsPerHour(string region)
+    {
+        var t = SpectPtsPerHourText(region);
+        if (string.IsNullOrWhiteSpace(t)) return 0;
+        double v = ParseStrict(t);
+        return v >= 0 ? v : double.NaN;
+    }
+
 
     private void OnSpectInputChanged()
     {
@@ -183,14 +226,30 @@ public partial class MainViewModel
     }
 
     // ===== Compute =====
-    private void ComputeSpectBarrier(BarrierItemViewModel b)
+    /// <summary>
+    /// Everything the solver needs, or a list of reasons it must not run. An invalid design produces an error,
+    /// never a thickness (a silent 0 mm from a typo is the worst outcome a shielding tool can have).
+    /// </summary>
+    private NuclearBarrierRequest? BuildSpectRequest(BarrierItemViewModel b, out List<string> errors, out List<SpectStudyViewModel> studies, out List<string> regions)
     {
-        var lib = NuclideLibrary.Default;
-        double r = Math.Max(1e-6, b.EffectiveDistance_m);
+        errors = new List<string>();
         bool controlled = string.Equals(b.Zone, "Controlled", StringComparison.OrdinalIgnoreCase);
-        double pHour = controlled ? 0.0 : ParseOrZero(SpectHourlyLimitText);
-        var regions = SpectRegionsFor(b);
-        var studies = SpectStudies.Where(s => s.IsEnabled && s.PatientsPerWeek > 0).ToList();
+        regions = SpectRegionsFor(b);
+
+        // Studies: an ENABLED study must be fully valid even if its count turns out to be 0.
+        var enabled = SpectStudies.Where(s => s.IsEnabled).ToList();
+        foreach (var s in enabled) errors.AddRange(s.InvalidInputs());
+        studies = enabled.Where(s => s.IsCounted).ToList();
+        if (enabled.Count == 0) errors.Add("No study is enabled (SPECT Parameters).");
+        else if (studies.Count == 0 && errors.Count == 0) errors.Add("Enabled studies all have 0 patients/week.");
+
+        double pHour = 0;
+        if (!controlled)
+        {
+            pHour = ParseStrict(SpectHourlyLimitText);
+            if (!(pHour >= 0)) errors.Add($"Hourly limit '{SpectHourlyLimitText}' is not a number ≥ 0 mSv.");
+        }
+        if (regions.Count == 0) errors.Add("This barrier sees no SPECT source region (tick Waiting / Camera / Stress).");
 
         var req = new NuclearBarrierRequest
         {
@@ -200,38 +259,63 @@ public partial class MainViewModel
             P_hour_mSv = pHour,
             Material = MapSpectMaterial(b.MaterialName) ?? "Lead",
         };
-        foreach (var s in studies)
-            req.Workloads.Add(new ProtocolWorkload(SpectProtocols.Build(s.ToStudy()), s.PatientsPerWeek));
-        var regionDist = regions.ToDictionary(reg => reg, reg => SpectRegionDistance(b, reg));
         foreach (var reg in regions)
-            req.Regions.Add(new RegionExposure(reg, regionDist[reg], SpectMaxPts(reg)));
+        {
+            double r = SpectRegionDistance(b, reg);
+            double atOnce = SpectMaxPts(reg);
+            if (double.IsNaN(atOnce)) errors.Add($"Max patients at once ({reg}) '{SpectMaxPtsText(reg)}' is not a number ≥ 1.");
+            double perHour = SpectPtsPerHour(reg);
+            if (double.IsNaN(perHour)) errors.Add($"Different patients in any hour ({reg}) '{SpectPtsPerHourText(reg)}' is not a number ≥ 0.");
+            req.Regions.Add(new RegionExposure(reg, r, atOnce, perHour));
+        }
         foreach (var pl in b.PreexistingLayers)
         {
             var m = MapSpectMaterial(pl.MaterialName);
-            if (m != null && pl.Thickness_mm > 0) req.PreExisting.Add(new ShieldLayer(m, pl.Thickness_mm));
+            if (m == null) continue;
+            if (double.IsNaN(pl.Thickness_mm) || pl.Thickness_mm < 0) errors.Add($"Pre-existing {pl.MaterialName}: thickness must be a number ≥ 0.");
+            else if (pl.Thickness_mm > 0) req.PreExisting.Add(new ShieldLayer(m, pl.Thickness_mm));
         }
+        if (errors.Count > 0) return null;
 
+        foreach (var s in studies)
+            req.Workloads.Add(new ProtocolWorkload(SpectProtocols.Build(s.ToStudy()), s.PatientsPerWeek));
+        return req;
+    }
+
+    private void ComputeSpectBarrier(BarrierItemViewModel b)
+    {
+        var lib = NuclideLibrary.Default;
+        bool controlled = string.Equals(b.Zone, "Controlled", StringComparison.OrdinalIgnoreCase);
+
+        var req = BuildSpectRequest(b, out var errors, out var studies, out var regions);
         NuclearBarrierResult res;
         try
         {
-            res = NuclearBarrierSolver.Solve(req, lib);
+            if (req == null) throw new ArgumentException("Invalid shielding input:\n• " + string.Join("\n• ", errors));
+            res = NuclearBarrierSolver.Solve(req, lib);   // the engine re-validates; both paths end here
         }
         catch (Exception ex)
         {
+            // No thickness, no gauge, no legend entry: the barrier shows as unsolved until the input is fixed.
             b.RequiredThickness_mm = double.NaN;
-            ResultSummary = $"{BareBarrierTitle(b)}: SPECT calculation error: {ex.Message}";
-            TraceItems.Add(new("Error", ex.Message));
+            b.GoverningLimit = "";
+            ResultSummary = $"{BareBarrierTitle(b)}: NOT CALCULATED — {ex.Message.Replace("\n", " ")}";
+            TraceItems.Add(new("Modality", "Nuclear medicine (SPECT), patient as source"));
+            TraceItems.Add(new("⛔ Not calculated", "Fix the input below; no shielding value is reported for this barrier."));
+            foreach (var line in ex.Message.Split('\n', StringSplitOptions.RemoveEmptyEntries).Skip(1))
+                TraceItems.Add(new("⛔ Input error", line.TrimStart('•', ' ')));
+            if (ex is not ArgumentException) TraceItems.Add(new("Error", ex.Message));
             CacheTraceToBarrier(b);
             return;
         }
 
         // ---- Trace (same panel/report as other modalities) ----
         TraceItems.Add(new("Modality", "Nuclear medicine (SPECT), patient as source"));
-        TraceItems.Add(new("Source regions seen", regions.Count > 0 ? string.Join(", ", regions) : "none"));
+        TraceItems.Add(new("Source regions seen", string.Join(", ", regions)));
         if (IsSpectSuite && b.IsDrawable)
         {
-            foreach (var reg in regions)
-                TraceItems.Add(new($"Distance from {reg} source (m)", regionDist[reg].ToString("G4", CultureInfo.CurrentCulture)));
+            foreach (var rx in req!.Regions)
+                TraceItems.Add(new($"Distance from {rx.Region} source (m)", rx.Distance_m.ToString("G4", CultureInfo.CurrentCulture)));
             if (regions.Contains(SpectRegions.Waiting) && !SpectWaitingPlaced)
                 TraceItems.Add(new("⚠ Warning", "Waiting source marker has not been placed; it sits on the camera source (conservative). Drag the blue W marker to where injected patients wait."));
             if (regions.Contains(SpectRegions.Stress) && !SpectStressPlaced)
@@ -239,15 +323,13 @@ public partial class MainViewModel
         }
         else
         {
-            TraceItems.Add(new("Distance used r (m)", r.ToString("G4", CultureInfo.CurrentCulture)));
+            TraceItems.Add(new("Distance used r (m)", req!.Regions[0].Distance_m.ToString("G4", CultureInfo.CurrentCulture)));
         }
-        if (studies.Count == 0)
-            TraceItems.Add(new("Studies", "none enabled (enter patients/week in SPECT Parameters)"));
         foreach (var s in studies)
             TraceItems.Add(new($"Study: {s.Protocol}", s.Describe()));
         if (!controlled)
-            foreach (var reg in regions)
-                TraceItems.Add(new($"Max patients at once ({reg})", SpectMaxPts(reg).ToString("G4", CultureInfo.CurrentCulture)));
+            foreach (var rx in req.Regions)
+                TraceItems.Add(new($"Patients ({rx.Region})", $"{rx.MaxSimultaneousPatients:G4} at once; {(rx.PatientsPerHour > 0 ? rx.PatientsPerHour.ToString("G4", CultureInfo.CurrentCulture) : "n/a")} different per hour"));
         foreach (var kv in res.Trace)
             TraceItems.Add(kv);
         foreach (var c in res.Contributions)
@@ -311,13 +393,22 @@ public partial class MainViewModel
     public IEnumerable<string> SpectReportAssumptions()
     {
         if (!IsSPECT) yield break;
-        foreach (var s in SpectStudies.Where(x => x.IsEnabled && x.PatientsPerWeek > 0))
+        foreach (var s in SpectStudies.Where(x => x.IsCounted))
             yield return $"{s.Protocol}: {s.Describe()}.";
         if (IsSpectSuite)
             yield return "Camera, waiting and stress patients are modeled at their own positions as marked on the layout; each barrier's distance is measured from each source position.";
         yield return $"Max patients present at once: waiting {SpectMaxPtsWaitingText}, camera {SpectMaxPtsCameraText}, stress {SpectMaxPtsStressText}.";
-        yield return $"Uncontrolled areas checked against {SpectHourlyLimitText} mSv in any one hour in addition to the weekly design goal.";
+        string PerHour(string t) => string.IsNullOrWhiteSpace(t) ? "not specified" : t;
+        yield return $"Different patients passing through in any one hour (turnover): waiting {PerHour(SpectPtsPerHourWaitingText)}, camera {PerHour(SpectPtsPerHourCameraText)}, stress {PerHour(SpectPtsPerHourStressText)}. " +
+                     "The hourly dose uses the larger of at-once and per-hour counts times the worst single-patient hour in that room (no decay credit between patients).";
+        yield return $"Uncontrolled areas checked against {SpectHourlyLimitText} mSv in any one hour in addition to the weekly design goal. " +
+                     "This hourly figure is the 10 CFR 20.1301(a)(2) public limit; that rule excludes dose from patients released under 10 CFR 35.75, so for a released-patient pathway it is applied here as a conservative design check, not as the governing regulation.";
+        if (IsSpectSuite)
+            yield return "In the suite layout each barrier is evaluated at its own distance from each source region (camera, waiting W marker, stress S marker on the drawing).";
         yield return "Dose-rate constants are for a point source in air (no patient self-attenuation), which is conservative.";
+        yield return "Pre-existing layers are credited by multiplying each layer's broad-beam transmission; for dissimilar layers this is an approximation, not a multilayer transport calculation.";
+        yield return "Barrier transmission is for a broad beam through the barrier only; room scatter is not modelled and can matter when the required transmission is very low (≲1%), per Oumano et al. 2025.";
+        yield return "Sources other than patients (hot lab, generator, dose preparation, waste storage) are not included and need a separate evaluation where they can be seen from a barrier.";
         yield return "Transmission data: Kusano & Caldwell, Health Phys 107:60 (2014); Oumano et al., JACMP (2025) for Tc-99m in gypsum, lightweight concrete, steel and glass.";
     }
 }

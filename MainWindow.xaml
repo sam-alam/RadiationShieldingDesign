@@ -1116,6 +1116,24 @@
                                             <DockPanel Margin="0,0,0,6">
                                                 <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
                                                          HorizontalContentAlignment="Center"
+                                                         Text="{Binding SpectPtsPerHourWaitingText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBlock Text="Different patients in any hour: waiting (blank = at-once)" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                            </DockPanel>
+                                            <DockPanel Margin="0,0,0,6">
+                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                         HorizontalContentAlignment="Center"
+                                                         Text="{Binding SpectPtsPerHourCameraText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBlock Text="Different patients in any hour: camera (blank = at-once)" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                            </DockPanel>
+                                            <DockPanel Margin="0,0,0,6">
+                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                         HorizontalContentAlignment="Center"
+                                                         Text="{Binding SpectPtsPerHourStressText, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <TextBlock Text="Different patients in any hour: stress (blank = at-once)" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
+                                            </DockPanel>
+                                            <DockPanel Margin="0,0,0,6">
+                                                <TextBox DockPanel.Dock="Right" Style="{StaticResource RsdTextBox}" Width="80"
+                                                         HorizontalContentAlignment="Center"
                                                          Text="{Binding SpectHourlyLimitText, UpdateSourceTrigger=PropertyChanged}"/>
                                                 <TextBlock Text="Hourly limit (mSv in any hour)" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0"/>
                                             </DockPanel>
@@ -3012,7 +3030,7 @@ VerticalAlignment="Center"/>
                 Binding="{Binding EffectiveDistance_m, StringFormat={}{0:F2}}"
                 Width="Auto" ElementStyle="{StaticResource CenterCell}"/>
 
-                            <DataGridTemplateColumn Header="Total Required Shielding" Width="*">
+                            <DataGridTemplateColumn Header="Additional Shielding Required" Width="*">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel VerticalAlignment="Center">

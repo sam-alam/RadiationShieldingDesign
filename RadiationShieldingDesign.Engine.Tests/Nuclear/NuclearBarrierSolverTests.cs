@@ -129,7 +129,7 @@ public class NuclearBarrierSolverTests
         var bare = Run(new());
         var withGypsum = Run(new() { new("Gypsum Wallboard", 31.75) }); // two layers of 5/8" drywall
         Assert.True(withGypsum.RequiredThickness_mm < bare.RequiredThickness_mm);
-        Assert.Empty(withGypsum.Warnings);
+        Assert.DoesNotContain(withGypsum.Warnings, w => w.Contains("Gypsum")); // layer credited without complaint
     }
 
     [Fact]
@@ -150,15 +150,117 @@ public class NuclearBarrierSolverTests
     }
 
     [Fact]
-    public void Zero_Activity_Preset_Warns()
+    public void Zero_Activity_Counted_Workload_Is_Rejected()
     {
-        var res = NuclearBarrierSolver.Solve(new NuclearBarrierRequest
+        // PYP has no default activity. Counting it with 0 MBq must be an error, not a 0 mm result.
+        var ex = Assert.Throws<ArgumentException>(() => NuclearBarrierSolver.Solve(new NuclearBarrierRequest
         {
             Workloads = { new(SpectProtocols.Create(SpectProtocols.TcPyp), 10) },
             Regions = { new(SpectRegions.Camera, 2.0) },
             Material = "Lead"
+        }, Lib));
+        Assert.Contains("activity must be > 0", ex.Message);
+    }
+
+    [Fact]
+    public void Zero_Patients_Per_Week_Disables_A_Workload_Without_Error()
+    {
+        var res = NuclearBarrierSolver.Solve(new NuclearBarrierRequest
+        {
+            Workloads = { new(SpectProtocols.Create(SpectProtocols.TcPyp), 0), new(OneHourTc(370), 5) },
+            Regions = { new("Room", 2.0) },
+            Material = "Lead"
         }, Lib);
-        Assert.Contains(res.Warnings, w => w.Contains("zero activity"));
+        Assert.Single(res.ByWorkload);
+    }
+
+    [Theory]
+    [InlineData(double.NaN, 1.0, 1.0, 0.02)]   // NaN patients/week (unparseable text)
+    [InlineData(-5, 1.0, 1.0, 0.02)]           // negative patients/week
+    [InlineData(10, 0.0, 1.0, 0.02)]           // zero distance
+    [InlineData(10, 1.0, 0.0, 0.02)]           // zero occupancy
+    [InlineData(10, 1.0, 1.5, 0.02)]           // occupancy > 1
+    [InlineData(10, 1.0, 1.0, 0.0)]            // zero weekly goal
+    public void Invalid_Inputs_Throw_Instead_Of_Returning_A_Thickness(double pts, double dist, double occ, double pWeek)
+    {
+        Assert.Throws<ArgumentException>(() => NuclearBarrierSolver.Solve(new NuclearBarrierRequest
+        {
+            Workloads = { new(OneHourTc(370), pts) },
+            Regions = { new("Room", dist) },
+            Occupancy = occ,
+            P_week_mSv = pWeek,
+            Material = "Lead"
+        }, Lib));
+    }
+
+    [Fact]
+    public void Negative_Activity_Is_Rejected()
+    {
+        Assert.Throws<ArgumentException>(() => NuclearBarrierSolver.Solve(new NuclearBarrierRequest
+        {
+            Workloads = { new(OneHourTc(-370), 10) },
+            Regions = { new("Room", 1.0) },
+            Material = "Lead"
+        }, Lib));
+    }
+
+    [Fact]
+    public void Barrier_That_Sees_No_Region_Is_An_Error_Not_Zero_Mm()
+    {
+        Assert.Throws<ArgumentException>(() => NuclearBarrierSolver.Solve(new NuclearBarrierRequest
+        {
+            Workloads = { new(OneHourTc(370), 10) },
+            Material = "Lead"
+        }, Lib));
+    }
+
+    [Fact]
+    public void Hourly_Turnover_Counts_Distinct_Patients_Not_Just_Concurrent_Ones()
+    {
+        // 4 patients, one at a time, 15 min each right after 1110 MBq Tc-99m. Only 1 present at once,
+        // but 4 pass through in the hour: the hourly dose is 4× the single-patient value.
+        var quick = new PatientTimeline
+        {
+            Name = "quick",
+            Injections = { new("Tc-99m", 1110, 0) },
+            Segments = { new("Stress", 0, 15) }
+        };
+        NuclearBarrierResult Run(double perHour) => NuclearBarrierSolver.Solve(new NuclearBarrierRequest
+        {
+            Workloads = { new(quick, 40) },
+            Regions = { new("Stress", 1.0, MaxSimultaneousPatients: 1, PatientsPerHour: perHour) },
+            Material = "Lead"
+        }, Lib);
+
+        double one = Run(0).Contributions[0].Unshielded_hour_mSv;
+        double four = Run(4).Contributions[0].Unshielded_hour_mSv;
+        Approx.Equal(4.0, four / one);
+        // Per patient: ∫0^15min 1110·e^(−λt) dt × 0.0161 → 4.404 µSv at 1 m.
+        Approx.Equal(4.404e-3, one, 1e-3);
+        // Without patients/hour, the solver flags the short stay.
+        Assert.Contains(Run(0).Warnings, w => w.Contains("patients/hour"));
+        Assert.DoesNotContain(Run(4).Warnings, w => w.Contains("patients/hour"));
+    }
+
+    [Fact]
+    public void Each_Region_Uses_Its_Own_Distance()
+    {
+        var tl = SpectProtocols.Create(SpectProtocols.Tc1DayRestStress);
+        NuclearBarrierResult Run(double rWait, double rCam) => NuclearBarrierSolver.Solve(new NuclearBarrierRequest
+        {
+            Workloads = { new(tl, 40) },
+            Regions = { new(SpectRegions.Waiting, rWait), new(SpectRegions.Camera, rCam) },
+            P_hour_mSv = 0,
+            Material = "Lead"
+        }, Lib);
+        double both1 = Run(1, 1).Contributions[0].Unshielded_week_mSv;
+        double waitOnly = NuclearBarrierSolver.Solve(new NuclearBarrierRequest
+        {
+            Workloads = { new(tl, 40) }, Regions = { new(SpectRegions.Waiting, 1) }, P_hour_mSv = 0, Material = "Lead"
+        }, Lib).Contributions[0].Unshielded_week_mSv;
+        double camOnly = both1 - waitOnly;
+        // Camera moved to 2 m: its share drops by 4, waiting unchanged.
+        Approx.Equal(waitOnly + camOnly / 4.0, Run(1, 2).Contributions[0].Unshielded_week_mSv, 1e-9);
     }
 
     [Fact]

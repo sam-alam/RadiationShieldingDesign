@@ -1100,7 +1100,7 @@ namespace RadiationShieldingDesign
                 MakeCell("Protected Area", wArea, bold: true, right: false, shadingFill: headerFill),
                 MakeCell("Occupancy", wOcc, bold: true, right: true, shadingFill: headerFill),
                 MakeCell("Distance", wDist, bold: true, right: true, shadingFill: headerFill),
-                MakeCell("Total Required Shielding", wThk, bold: true, right: true, shadingFill: headerFill)
+                MakeCell("Additional Shielding Required", wThk, bold: true, right: true, shadingFill: headerFill)
             );
             tbl.Append(header);
 
@@ -1194,7 +1194,7 @@ namespace RadiationShieldingDesign
                 if (b.Designation == BarrierDesignation.Floor ||
         b.Designation == BarrierDesignation.Ceiling)
                     continue;
-                if (b.RequiredThickness_mm <= 0) continue;
+                if (!(b.RequiredThickness_mm > 0)) continue;   // 0, NaN (not calculated) and non-numbers stay out of the legend
                 if (string.IsNullOrWhiteSpace(b.MaterialName)) continue;
 
                 string label = MakeLegendLabel(b);
@@ -1276,11 +1276,13 @@ namespace RadiationShieldingDesign
                 b.MaterialName?.IndexOf("lead", StringComparison.OrdinalIgnoreCase) >= 0
                 || string.Equals(b.MaterialName, "Pb", StringComparison.OrdinalIgnoreCase);
 
+            // The legend must show what is SPECIFIED on the drawing. With a rounding rule (minimum gauge, +1 step...)
+            // FinalThickness_mm is thicker than the computed requirement; using the requirement here mislabeled it.
             if (isLead)
-                return $"{b.CommercialGaugeOnly} Lead";
+                return $"{(b.HasThicknessRounding && !string.IsNullOrWhiteSpace(b.FinalThicknessShortDisplay) ? b.FinalThicknessShortDisplay : b.CommercialGaugeOnly)} Lead";
 
             // Non-lead: show common fractions (5/8") if close, otherwise decimal inches
-            double inches = b.RequiredThickness_mm / 25.4;
+            double inches = (b.HasThicknessRounding && b.FinalThickness_mm > 0 ? b.FinalThickness_mm : b.RequiredThickness_mm) / 25.4;
             string inchText = ToCommonFractionInches(inches);
 
             string mat = NormalizeMaterialForLegend(b.MaterialName);

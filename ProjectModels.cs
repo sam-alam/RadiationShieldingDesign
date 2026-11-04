@@ -116,6 +116,9 @@ public sealed class ProjectDto
     public double ChestX { get; set; }
     public double ChestY { get; set; }
     public bool ChestPlaced { get; set; }
+    public string? SpectPtsPerHourWaitingText { get; set; }
+    public string? SpectPtsPerHourCameraText { get; set; }
+    public string? SpectPtsPerHourStressText { get; set; }
 
     // Survey
     public double SurveyRate_mR_per_h { get; set; }

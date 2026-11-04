@@ -104,6 +104,7 @@ public class SpectPatientModelTests
     [Theory]
     [InlineData(SpectProtocols.Tc1DayRestStress)]
     [InlineData(SpectProtocols.Tc2DayPerVisit)]
+    [InlineData(SpectProtocols.Tc2DayRestVisit)]
     [InlineData(SpectProtocols.DualIsotope)]
     [InlineData(SpectProtocols.TcPyp)]
     [InlineData(SpectProtocols.TcMuga)]
@@ -114,5 +115,43 @@ public class SpectPatientModelTests
         Assert.True(tl.Segments.Count > 0);
         Assert.True(tl.Notes.Count > 0);
         foreach (var s in tl.Segments) Assert.True(s.End_min > s.Start_min);
+    }
+
+    [Fact]
+    public void Peak_Hour_Window_May_End_When_The_Patient_Leaves()
+    {
+        // Default 1-day rest/stress: waiting 0–45, 65–90 and 105–135 min, stress injection (1110 MBq) at 100 min.
+        // The worst hour in the waiting room is 75–135 min (ends when the patient leaves for the stress scan):
+        // 12.236 µSv at 1 m. Windows starting only at segment starts / injection times give 10.965 µSv (−10%).
+        var tl = SpectProtocols.Create(SpectProtocols.Tc1DayRestStress);
+        var wait = SpectPatientModel.Compute(tl, Lib).Single(d => d.Region == SpectRegions.Waiting);
+        Approx.Equal(12.235867221859726, wait.PeakHourDose_uSv_at1m, 1e-6);
+    }
+
+    [Fact]
+    public void Peak_Hour_Matches_Brute_Force_Sliding_Window()
+    {
+        var tl = SpectProtocols.Create(SpectProtocols.DualIsotope);
+        tl.Voids.Add(new VoidEvent(70, 0.7));
+        foreach (var d in SpectPatientModel.Compute(tl, Lib))
+        {
+            var n = Lib.Get(d.NuclideId);
+            var segs = tl.Segments.Where(s => s.Region == d.Region).ToList();
+            double tEnd = tl.Segments.Max(s => s.End_min);
+            double best = 0;
+            for (double w0 = -60; w0 <= tEnd; w0 += 0.05)
+            {
+                double w1 = w0 + 60;
+                double v = segs.Sum(s =>
+                {
+                    double a = Math.Max(s.Start_min, w0), b = Math.Min(s.End_min, w1);
+                    return b > a ? SpectPatientModel.ActivityIntegral_MBq_h(tl, n, a, b) : 0.0;
+                });
+                best = Math.Max(best, v);
+            }
+            double expected = best * n.DoseRateConst_uSv_m2_per_MBq_h;
+            Assert.True(d.PeakHourDose_uSv_at1m >= expected * (1 - 1e-9), $"{d.Region}/{d.NuclideId}: {d.PeakHourDose_uSv_at1m} < brute force {expected}");
+            Approx.Equal(expected, d.PeakHourDose_uSv_at1m, 1e-3);
+        }
     }
 }

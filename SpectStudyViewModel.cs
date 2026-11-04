@@ -59,7 +59,8 @@ public partial class SpectStudyViewModel : ObservableObject
     public string Activity1Label => Protocol switch
     {
         SpectProtocols.Tc1DayRestStress => "Rest Tc-99m (mCi)",
-        SpectProtocols.Tc2DayPerVisit => "Tc-99m per visit (mCi)",
+        SpectProtocols.Tc2DayPerVisit => "Stress-visit Tc-99m (mCi)",
+        SpectProtocols.Tc2DayRestVisit => "Rest-visit Tc-99m (mCi)",
         SpectProtocols.DualIsotope => "Rest Tl-201 (mCi)",
         SpectProtocols.I123Mibg => "I-123 (mCi)",
         _ => "Tc-99m (mCi)"
@@ -77,24 +78,53 @@ public partial class SpectStudyViewModel : ObservableObject
 
     public string GapLabel => Protocol == SpectProtocols.I123Mibg ? "Late image at (min)" : "Rest scan → stress (min)";
 
+    /// <summary>Patients per week; NaN when the text is blank or not a number (never silently 0).</summary>
     public double PatientsPerWeek => Parse(PatientsPerWeekText);
 
+    /// <summary>True when the study is enabled and counted (patients/week &gt; 0). NaN → false; validate first.</summary>
+    public bool IsCounted => IsEnabled && PatientsPerWeek > 0;
+
+    /// <summary>Fields that apply to this protocol but are blank, non-numeric or negative. Empty = OK.</summary>
+    public List<string> InvalidInputs()
+    {
+        var errs = new List<string>();
+        void Check(string label, string text, bool mustBePositive)
+        {
+            double v = Parse(text);
+            if (double.IsNaN(v)) errs.Add($"{Protocol}: '{label}' is blank or not a number ('{text}').");
+            else if (v < 0 || (mustBePositive && v <= 0)) errs.Add($"{Protocol}: '{label}' must be {(mustBePositive ? "> 0" : "≥ 0")} ('{text}').");
+        }
+        Check("Patients/week", PatientsPerWeekText, false);
+        Check(Activity1Label, Activity1Text, true);
+        if (HasActivity2) Check(Activity2Label, Activity2Text, true);
+        if (HasWait) Check(WaitLabel, WaitText, false);
+        Check("Scan (min)", ScanText, false);
+        if (HasGap) Check(GapLabel, GapText, false);
+        if (HasStress)
+        {
+            Check("Stress (min)", StressText, false);
+            Check("Post-stress wait (min)", PostStressWaitText, false);
+        }
+        return errs;
+    }
+
+    /// <summary>Only applicable fields are read; the rest are 0 so an unused blank field cannot poison the timeline.</summary>
     public SpectStudy ToStudy() => new()
     {
         Protocol = Protocol,
         Activity1_MBq = Parse(Activity1Text) * MBqPerMCi,
         Activity2_MBq = HasActivity2 ? Parse(Activity2Text) * MBqPerMCi : 0,
-        Wait_min = Parse(WaitText),
+        Wait_min = HasWait ? Parse(WaitText) : 0,
         Scan_min = Parse(ScanText),
-        Gap_min = Parse(GapText),
-        Stress_min = Parse(StressText),
-        PostStressWait_min = Parse(PostStressWaitText),
+        Gap_min = HasGap ? Parse(GapText) : 0,
+        Stress_min = HasStress ? Parse(StressText) : 0,
+        PostStressWait_min = HasStress ? Parse(PostStressWaitText) : 0,
     };
 
     /// <summary>One line for the trace and the report.</summary>
     public string Describe()
     {
-        var parts = new List<string> { $"{Fmt(PatientsPerWeek)} pts/wk", $"{Activity1Label.Replace(" (mCi)", "")} {Activity1Text} mCi" };
+        var parts = new List<string> { $"{PatientsPerWeekText} pts/wk", $"{Activity1Label.Replace(" (mCi)", "")} {Activity1Text} mCi" };
         if (HasActivity2) parts.Add($"stress {Activity2Text} mCi");
         if (HasWait) parts.Add($"{WaitLabel.Replace(" (min)", "").ToLowerInvariant()} {WaitText} min");
         parts.Add($"scan {ScanText} min");
@@ -105,12 +135,13 @@ public partial class SpectStudyViewModel : ObservableObject
 
     private static string Fmt(double v) => v.ToString("0.###", CultureInfo.CurrentCulture);
 
+    /// <summary>Strict: blank or unparseable text gives NaN so it is caught by validation instead of becoming 0.</summary>
     private static double Parse(string? s)
     {
-        if (string.IsNullOrWhiteSpace(s)) return 0;
+        if (string.IsNullOrWhiteSpace(s)) return double.NaN;
         var t = s.Trim();
         if (double.TryParse(t, NumberStyles.Float, CultureInfo.CurrentCulture, out var v)) return v;
         if (double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture, out v)) return v;
-        return 0;
+        return double.NaN;
     }
 }

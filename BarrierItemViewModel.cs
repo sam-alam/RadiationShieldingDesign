@@ -153,7 +153,7 @@ public partial class BarrierItemViewModel : ObservableObject, IDisposable
     [ObservableProperty] private PetSourceRegion petRegion = PetSourceRegion.Both;
     public bool CanUseNcrpK => !_owner.IsNuclear && !_owner.IsCT;
 
-    // SPECT suite: which source regions this barrier sees (all at the drawn source-to-barrier distance)
+    // SPECT suite: which source regions this barrier sees (each at its own distance from that region's source marker)
     [ObservableProperty] private bool spectSeesWaiting = true;
     [ObservableProperty] private bool spectSeesCamera = true;
     [ObservableProperty] private bool spectSeesStress = true;
@@ -333,6 +333,7 @@ public partial class BarrierItemViewModel : ObservableObject, IDisposable
         // UI rule: Auto is baseline -> don't show "Final:" line.
         // Everything else shows Final.
         HasThicknessRounding = (ThicknessRoundingRule != ThicknessRoundingRule.Auto);
+        OnPropertyChanged(nameof(GaugeKey));
     }
 
     public bool ShowPetRegionSelector =>
@@ -774,13 +775,18 @@ public partial class BarrierItemViewModel : ObservableObject, IDisposable
 
     public string CommercialGaugeOnly =>
     double.IsPositiveInfinity(RequiredThickness_mm) ? "Not solvable" :
-    !double.IsFinite(RequiredThickness_mm) || RequiredThickness_mm <= 0 ? "0\"" :
+    double.IsNaN(RequiredThickness_mm) ? "Not calculated" :   // invalid input: never show 0"
+    RequiredThickness_mm <= 0 ? "0\"" :
     IsLead
         ? GaugeUtils.RoundUpGauge(RequiredThickness_mm).Label
         : $"{RequiredThickness_mm / 25.4:0.###}\"";
 
 
-    public string GaugeKey => CommercialGaugeOnly;
+    /// <summary>Key for canvas stroke colour and legend grouping: the gauge actually specified (after any rounding rule).</summary>
+    public string GaugeKey =>
+        HasThicknessRounding && IsLead && !string.IsNullOrWhiteSpace(FinalThicknessShortDisplay) && double.IsFinite(FinalThickness_mm)
+            ? FinalThicknessShortDisplay
+            : CommercialGaugeOnly;
 
     public string ThicknessShortDisplay
     {
@@ -789,7 +795,10 @@ public partial class BarrierItemViewModel : ObservableObject, IDisposable
             if (double.IsPositiveInfinity(RequiredThickness_mm))
                 return "Not solvable by wall thickening";
 
-            if (!double.IsFinite(RequiredThickness_mm) || RequiredThickness_mm <= 0)
+            if (double.IsNaN(RequiredThickness_mm))
+                return "Not calculated (invalid input)";
+
+            if (RequiredThickness_mm <= 0)
                 return "0 mm / 0\"";
 
             string matAbbrev =

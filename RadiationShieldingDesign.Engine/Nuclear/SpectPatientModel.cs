@@ -122,11 +122,21 @@ public static class SpectPatientModel
 
                 double integral = segs.Sum(s => ActivityIntegral_MBq_h(tl, n, s.Start_min, s.End_min));
 
-                // Peak 1-hour window inside this region. Activity only drops between injections,
-                // so the worst window starts at a segment start or an injection time.
-                var starts = segs.Select(s => s.Start_min)
-                    .Concat(tl.Injections.Where(i => segs.Any(s => i.Time_min >= s.Start_min && i.Time_min < s.End_min)).Select(i => i.Time_min))
-                    .Distinct();
+                // Peak 1-hour window for this region. Let g(t) = A(t) while the patient is in the region, else 0.
+                // The window integral W(w0) = ∫_{w0}^{w0+60} g has dW/dw0 = g(w0+60) − g(w0). Between breakpoints
+                // both terms decay with the same λ, so the sign of dW/dw0 is constant there and every maximum
+                // sits at a breakpoint of g: a segment start/end, an injection or a void — either at the window
+                // START (w0 = t_b) or at the window END (w0 = t_b − 60). Checking only segment starts and
+                // injection times misses windows that end exactly when the patient leaves (e.g. the last
+                // waiting period of a 1-day rest/stress study) and under-reads the peak.
+                var breakpoints = segs.SelectMany(s => new[] { s.Start_min, s.End_min })
+                    .Concat(tl.Injections.Select(i => i.Time_min))
+                    .Concat(tl.Voids.Select(v => v.Time_min))
+                    .ToList();
+                var starts = breakpoints
+                    .Concat(breakpoints.Select(t => t - 60.0))
+                    .Distinct()
+                    .ToList();
                 double peak = 0;
                 foreach (var w0 in starts)
                 {

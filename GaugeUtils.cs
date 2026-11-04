@@ -40,9 +40,11 @@
             var g = GaugeTable.FirstOrDefault(x => x.Mm >= mm);
             if (string.IsNullOrEmpty(g.Label))
             {
-                // thicker than our max entry -> clamp to max available
-                var last = GaugeTable[^1];
-                return (last.Label, last.Mm);
+                // Thicker than the largest stock gauge. Never clamp DOWN to the table maximum (that would
+                // specify less than required): round up to the next 1/16" and label it in decimal inches.
+                double sixteenths = Math.Ceiling(mm / 25.4 * 16.0);
+                double upMm = sixteenths / 16.0 * 25.4;
+                return ($"{sixteenths / 16.0:0.###}\"", upMm);
             }
             return (g.Label, g.Mm);
         }
